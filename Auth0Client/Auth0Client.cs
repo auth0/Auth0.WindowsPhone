@@ -1,3 +1,4 @@
+using Microsoft.Phone.Controls;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -22,6 +23,8 @@ namespace Auth0.SDK
         private readonly string clientId;
         private readonly string clientSecret;
 
+        internal string State { get; set; }
+
         public Auth0Client(string subDomain, string clientId, string clientSecret)
         {
             this.subDomain = subDomain;
@@ -38,6 +41,49 @@ namespace Auth0.SDK
                 return string.Format(DefaultCallback, this.subDomain);
             }
         }
+
+        /// <summary>
+        /// Login a user into an Auth0 application by showing an embedded browser window either showing the widget or skipping it by passing a connection name
+        /// </summary>
+        /// <param name="owner">The owner window</param>
+        /// <param name="connection">Optional connection name to bypass the login widget</param>
+        /// <remarks>When using openid profile if the user has many attributes the token might get big and the embedded browser (Internet Explorer) won't be able to parse a large URL</remarks>
+        /// </param>
+        /// <returns>Returns a Task of Auth0User</returns>
+        public Task<Auth0User> LoginAsync(PhoneApplicationPage owner, string connection = "")
+        {
+            var tcs = new TaskCompletionSource<Auth0User>();
+            var auth = this.GetAuthenticator(connection);
+
+            auth.Error += (o, e) =>
+            {
+                var ex = e.Exception ?? new UnauthorizedAccessException(e.Message);
+                tcs.TrySetException(ex);
+            };
+
+            auth.Completed += (o, e) =>
+            {
+                if (!e.IsAuthenticated)
+                {
+                    tcs.TrySetCanceled();
+                }
+                else
+                {
+                    if (this.State != e.Account.State)
+                    {
+                        tcs.TrySetException(new UnauthorizedAccessException("State does not match"));
+                    }
+                    else
+                    {
+                        this.CurrentUser = e.Account;
+                        tcs.TrySetResult(this.CurrentUser);
+                    }
+                }
+            };
+
+            return tcs.Task;
+        }
+
 
         /// <summary>
         ///  Log a user into an Auth0 application given an user name and password.
@@ -131,27 +177,11 @@ namespace Auth0.SDK
                 string.Format(AuthorizeUrl, subDomain, clientId, Uri.EscapeDataString(redirectUri), connection) :
                 string.Format(LoginWidgetUrl, subDomain, clientId, Uri.EscapeDataString(redirectUri));
 
-            var state = new string(chars);
-            var startUri = new Uri(authorizeUri + "&state=" + state);
+            this.State = new string(chars);
+            var startUri = new Uri(authorizeUri + "&state=" + this.State);
             var endUri = new Uri(redirectUri);
 
             return new LoginBrowser(startUri, endUri);
-        }
-
-        private static Dictionary<string, string> parseResult(string result)
-        {
-            Dictionary<string, string> tokens = new Dictionary<string, string>();
-
-            //result will be: https://callback#id_token=1234&access_token=12345&...
-            var strTokens = result.Split('#')[1].Split('&');
-
-            foreach (var t in strTokens)
-            {
-                var tok = t.Split('=');
-                tokens.Add(tok[0], tok[1]);
-            }
-
-            return tokens;
         }
     }
 }
