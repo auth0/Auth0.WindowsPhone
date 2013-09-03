@@ -122,7 +122,7 @@ namespace Auth0.SDK
         public void ShowUI(PhoneApplicationPage owner)
         {
             this.Browser.Navigate(this.StartUrl);
-            this.Content = owner;
+            owner.Content = this;
         }
 
         public class AuthenticatorCompletedEventArgs : EventArgs
