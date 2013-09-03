@@ -119,6 +119,12 @@ namespace Auth0.SDK
             return inputs;
         }
 
+        public void ShowUI(PhoneApplicationPage owner)
+        {
+            this.Browser.Navigate(this.StartUrl);
+            this.Content = owner;
+        }
+
         public class AuthenticatorCompletedEventArgs : EventArgs
         {
             /// <summary>

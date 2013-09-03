@@ -81,6 +81,8 @@ namespace Auth0.SDK
                 }
             };
 
+            auth.ShowUI(owner);
+
             return tcs.Task;
         }
 
