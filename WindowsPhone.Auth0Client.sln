@@ -5,6 +5,15 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client", "Auth0Client\Auth0Client.csproj", "{088072EA-5157-4C40-B41B-8BB7B7187FCA}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{C84F1392-0200-4F47-88DB-94A5BAD3AE21}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\SampleApp.csproj", "{FD828637-A4E1-437D-A9F5-F17422373EDD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +36,24 @@ Global
 		{088072EA-5157-4C40-B41B-8BB7B7187FCA}.Release|ARM.Build.0 = Release|ARM
 		{088072EA-5157-4C40-B41B-8BB7B7187FCA}.Release|x86.ActiveCfg = Release|x86
 		{088072EA-5157-4C40-B41B-8BB7B7187FCA}.Release|x86.Build.0 = Release|x86
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|ARM.ActiveCfg = Debug|ARM
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|ARM.Build.0 = Debug|ARM
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|ARM.Deploy.0 = Debug|ARM
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|x86.ActiveCfg = Debug|x86
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|x86.Build.0 = Debug|x86
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Debug|x86.Deploy.0 = Debug|x86
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|ARM.ActiveCfg = Release|ARM
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|ARM.Build.0 = Release|ARM
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|ARM.Deploy.0 = Release|ARM
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|x86.ActiveCfg = Release|x86
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|x86.Build.0 = Release|x86
+		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

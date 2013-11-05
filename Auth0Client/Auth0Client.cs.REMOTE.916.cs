@@ -14,17 +14,14 @@ namespace Auth0.SDK
     /// </summary>
     public partial class Auth0Client
     {
-        private const string AuthorizeUrl = "https://{0}.auth0.com/authorize?client_id={1}&scope={2}&redirect_uri={3}&response_type=token&connection={4}";
-        private const string LoginWidgetUrl = "https://{0}.auth0.com/login/?client={1}&scope={2}&redirect_uri={3}&response_type=token";
+        private const string AuthorizeUrl = "https://{0}.auth0.com/authorize?client_id={1}&scope=openid%20profile&redirect_uri={2}&response_type=token&connection={3}";
+        private const string LoginWidgetUrl = "https://{0}.auth0.com/login/?client={1}&scope=openid%20profile&redirect_uri={2}&response_type=token";
         private const string ResourceOwnerEndpoint = "https://{0}.auth0.com/oauth/ro";
-        private const string UserInfoEndpoint = "https://{0}.auth0.com/userinfo?access_token={1}";
         private const string DefaultCallback = "https://{0}.auth0.com/mobile";
 
         private readonly string subDomain;
         private readonly string clientId;
         private readonly string clientSecret;
-
-        private readonly AuthenticationBroker broker;
 
         internal string State { get; set; }
 
@@ -33,7 +30,6 @@ namespace Auth0.SDK
             this.subDomain = subDomain;
             this.clientId = clientId;
             this.clientSecret = clientSecret;
-            this.broker = new AuthenticationBroker();
         }
 
         public Auth0User CurrentUser { get; private set; }
@@ -54,35 +50,40 @@ namespace Auth0.SDK
         /// <remarks>When using openid profile if the user has many attributes the token might get big and the embedded browser (Internet Explorer) won't be able to parse a large URL</remarks>
         /// </param>
         /// <returns>Returns a Task of Auth0User</returns>
-        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
+        public Task<Auth0User> LoginAsync(PhoneApplicationPage owner, string connection = "")
         {
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            var tcs = new TaskCompletionSource<Auth0User>();
+            var auth = this.GetAuthenticator(connection);
 
-            var endpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
-            request.Method = "GET";
-
-            TaskFactory taskFactory = new TaskFactory();
-            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
-            try
+            auth.Error += (o, e) =>
             {
-                using (Stream responseStream = response.GetResponseStream())
+                var ex = e.Exception ?? new UnauthorizedAccessException(e.Message);
+                tcs.TrySetException(ex);
+            };
+
+            auth.Completed += (o, e) =>
+            {
+                if (!e.IsAuthenticated)
                 {
-                    using (StreamReader streamReader = new StreamReader(responseStream))
-                    {
-                        var text = streamReader.ReadToEnd();
-                        user.Profile = JObject.Parse(text);
-                        streamReader.Close();
-                    }
-                    responseStream.Close();
+                    tcs.TrySetCanceled();
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
+                else
+                {
+                    if (this.State != e.Account.State)
+                    {
+                        tcs.TrySetException(new UnauthorizedAccessException("State does not match"));
+                    }
+                    else
+                    {
+                        this.CurrentUser = e.Account;
+                        tcs.TrySetResult(this.CurrentUser);
+                    }
+                }
+            };
 
-            return user;
+            auth.ShowUI(owner);
+
+            return tcs.Task;
         }
 
 
@@ -93,20 +94,16 @@ namespace Auth0.SDK
         /// <param name="connection" type="string">The name of the connection to use in Auth0. Connection defines an Identity Provider.</param>
         /// <param name="userName" type="string">User name.</param>
         /// <param name="password type="string"">User password.</param>
-        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid profile")
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password)
         {
-            TaskFactory taskFactory = new TaskFactory();
-
-
             var endpoint = string.Format(ResourceOwnerEndpoint, this.subDomain);
             var parameters = String.Format(
-                "client_id={0}&client_secret={1}&connection={2}&username={3}&password={4}&grant_type=password&scope={5}",
+                "client_id={0}&client_secret={1}&connection={2}&username={3}&password={4}&grant_type=password&scope=openid%20profile",
                 this.clientId,
                 this.clientSecret,
                 connection,
                 userName,
-                password,
-                scope);
+                password);
 
             byte[] postData = Encoding.UTF8.GetBytes(parameters);
 
@@ -114,15 +111,14 @@ namespace Auth0.SDK
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = postData.Length;
-              
-            using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
+
+            using (var requestStream = await Task<Stream>.Factory.FromAsync(request.BeginGetRequestStream, request.EndGetRequestStream, request))
             {
-                await stream.WriteAsync(postData, 0, postData.Length);
-                await stream.FlushAsync();
-                stream.Close();
-            };
+                await requestStream.WriteAsync(postData, 0, postData.Length);
+            }
             
-            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
+            var response = await Task<WebResponse>.Factory.FromAsync(request.BeginGetResponse, request.EndGetResponse, request);
+                
             try
             {
                 using (Stream responseStream = response.GetResponseStream())
@@ -161,10 +157,9 @@ namespace Auth0.SDK
         /// <summary>
         /// Log a user out of a Auth0 application.
         /// </summary>
-        public async Task LogoutAsync()
+        public void Logout()
         {
             this.CurrentUser = null;
-            await this.broker.Logout();
         }
 
         private void SetupCurrentUser(IDictionary<string, string> accountProperties)
@@ -172,7 +167,7 @@ namespace Auth0.SDK
             this.CurrentUser = new Auth0User(accountProperties);
         }
 
-        private Uri GetStartUri(string connection, string scope)
+        private LoginBrowser GetAuthenticator(string connection)
         {
             // Generate state to include in startUri
             var chars = new char[16];
@@ -182,14 +177,16 @@ namespace Auth0.SDK
                 chars[i] = (char)rand.Next((int)'a', (int)'z' + 1);
             }
 
+            var redirectUri = this.CallbackUrl;
             var authorizeUri = !string.IsNullOrWhiteSpace(connection) ?
-                string.Format(AuthorizeUrl, subDomain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl), connection) :
-                string.Format(LoginWidgetUrl, subDomain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl));
+                string.Format(AuthorizeUrl, subDomain, clientId, Uri.EscapeDataString(redirectUri), connection) :
+                string.Format(LoginWidgetUrl, subDomain, clientId, Uri.EscapeDataString(redirectUri));
 
             this.State = new string(chars);
             var startUri = new Uri(authorizeUri + "&state=" + this.State);
+            var endUri = new Uri(redirectUri);
 
-            return startUri;
+            return new LoginBrowser(startUri, endUri);
         }
     }
 }

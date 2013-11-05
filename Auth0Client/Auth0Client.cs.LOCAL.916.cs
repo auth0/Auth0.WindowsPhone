@@ -95,9 +95,6 @@ namespace Auth0.SDK
         /// <param name="password type="string"">User password.</param>
         public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid profile")
         {
-            TaskFactory taskFactory = new TaskFactory();
-
-
             var endpoint = string.Format(ResourceOwnerEndpoint, this.subDomain);
             var parameters = String.Format(
                 "client_id={0}&client_secret={1}&connection={2}&username={3}&password={4}&grant_type=password&scope={5}",
@@ -114,14 +111,8 @@ namespace Auth0.SDK
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = postData.Length;
-              
-            using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
-            {
-                await stream.WriteAsync(postData, 0, postData.Length);
-                await stream.FlushAsync();
-                stream.Close();
-            };
-            
+
+            TaskFactory taskFactory = new TaskFactory();
             var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
             try
             {
@@ -129,7 +120,7 @@ namespace Auth0.SDK
                 {
                     using (StreamReader streamReader = new StreamReader(responseStream))
                     {
-                        var text = await streamReader.ReadToEndAsync();
+                        var text = streamReader.ReadToEnd();
                         var data = JObject.Parse(text).ToObject<Dictionary<string, string>>();
 
                         if (data.ContainsKey("error"))

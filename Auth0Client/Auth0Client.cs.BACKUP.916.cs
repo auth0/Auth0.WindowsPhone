@@ -93,11 +93,12 @@ namespace Auth0.SDK
         /// <param name="connection" type="string">The name of the connection to use in Auth0. Connection defines an Identity Provider.</param>
         /// <param name="userName" type="string">User name.</param>
         /// <param name="password type="string"">User password.</param>
+<<<<<<< HEAD
         public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid profile")
+=======
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password)
+>>>>>>> find login with resource owner
         {
-            TaskFactory taskFactory = new TaskFactory();
-
-
             var endpoint = string.Format(ResourceOwnerEndpoint, this.subDomain);
             var parameters = String.Format(
                 "client_id={0}&client_secret={1}&connection={2}&username={3}&password={4}&grant_type=password&scope={5}",
@@ -114,22 +115,32 @@ namespace Auth0.SDK
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = postData.Length;
-              
-            using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
-            {
-                await stream.WriteAsync(postData, 0, postData.Length);
-                await stream.FlushAsync();
-                stream.Close();
-            };
-            
+
+<<<<<<< HEAD
+            TaskFactory taskFactory = new TaskFactory();
             var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
             try
             {
+=======
+            using (var requestStream = await Task<Stream>.Factory.FromAsync(request.BeginGetRequestStream, request.EndGetRequestStream, request))
+            {
+                await requestStream.WriteAsync(postData, 0, postData.Length);
+            }
+            
+            var response = await Task<WebResponse>.Factory.FromAsync(request.BeginGetResponse, request.EndGetResponse, request);
+                
+            try
+            {
+>>>>>>> find login with resource owner
                 using (Stream responseStream = response.GetResponseStream())
                 {
                     using (StreamReader streamReader = new StreamReader(responseStream))
                     {
+<<<<<<< HEAD
+                        var text = streamReader.ReadToEnd();
+=======
                         var text = await streamReader.ReadToEndAsync();
+>>>>>>> find login with resource owner
                         var data = JObject.Parse(text).ToObject<Dictionary<string, string>>();
 
                         if (data.ContainsKey("error"))
@@ -137,6 +148,7 @@ namespace Auth0.SDK
                             throw new UnauthorizedAccessException("Error authenticating: " + data["error"]);
                         }
                         else if (data.ContainsKey("access_token"))
+<<<<<<< HEAD
                         {
                             this.SetupCurrentUser(data);
                         }
@@ -144,6 +156,15 @@ namespace Auth0.SDK
                         {
                             throw new UnauthorizedAccessException("Expected access_token in access token response, but did not receive one.");
                         }
+=======
+                        {
+                            this.SetupCurrentUser(data);
+                        }
+                        else
+                        {
+                            throw new UnauthorizedAccessException("Expected access_token in access token response, but did not receive one.");
+                        }
+>>>>>>> find login with resource owner
 
                         streamReader.Close();
                     }
