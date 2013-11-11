@@ -87,8 +87,9 @@
   <ItemGroup>
     <Compile Include="Auth0Client.cs" />
     <Compile Include="Auth0User.cs" />
-    <Compile Include="LoginBrowser.xaml.cs">
-      <DependentUpon>LoginBrowser.xaml</DependentUpon>
+    <Compile Include="AuthenticationBroker.cs" />
+    <Compile Include="LoginPage.xaml.cs">
+      <DependentUpon>LoginPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -101,7 +102,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="LoginBrowser.xaml">
+    <Page Include="LoginPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
