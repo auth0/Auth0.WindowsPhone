@@ -1,5 +1,4 @@
 using System.Threading;
-using Windows.UI.Input;
 using Microsoft.Phone.Controls;
 using Newtonsoft.Json.Linq;
 using System;
@@ -238,7 +237,7 @@ namespace Auth0.SDK
             return startUri;
         }
 
-        internal class BackgroundLoginResult
+        private class BackgroundLoginResult
         {
             internal BackgroundLoginResult(Auth0User user)
             {
