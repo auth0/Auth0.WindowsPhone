@@ -1,3 +1,5 @@
+using System.Threading;
+using Windows.UI.Input;
 using Microsoft.Phone.Controls;
 using Newtonsoft.Json.Linq;
 using System;
@@ -47,17 +49,71 @@ namespace Auth0.SDK
         }
 
         /// <summary>
-        /// Login a user into an Auth0 application by showing an embedded browser window either showing the widget or skipping it by passing a connection name
+        /// Login a user into an Auth0 application. Attempts to do a background login, but if unsuccessful shows an embedded browser window either showing the widget or skipping it by passing a connection name
         /// </summary>
-        /// <param name="owner">The owner window</param>
         /// <param name="connection">Optional connection name to bypass the login widget</param>
         /// <remarks>When using openid profile if the user has many attributes the token might get big and the embedded browser (Internet Explorer) won't be able to parse a large URL</remarks>
-        /// </param>
         /// <returns>Returns a Task of Auth0User</returns>
         public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
         {
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            var startUri = GetStartUri(connection, scope);
+            var expectedEndUri = new Uri(this.CallbackUrl);
 
+            var backgroundLoginResult = await DoBackgroundLoginAsync(startUri, expectedEndUri);
+            
+            var user = backgroundLoginResult.Success
+                ? backgroundLoginResult.User
+                : await DoInteractiveLoginAsync(backgroundLoginResult.LoginProcessUri, expectedEndUri);
+            
+            return await RetrieveAuthenticatedUserProfileAsync(user);
+        }
+
+        /// <summary>
+        /// Uses a hidden browser object to perform a background authentication, for re-authentication attemps after initial registration
+        /// </summary>
+        /// <param name="startUri">Uri pointing to the start of the authentication process</param>
+        /// <param name="expectedEndUri">Expected callback Uri at successful completion of authentication process</param>
+        /// <returns>Authenticated Auth0User</returns>
+        private async Task<BackgroundLoginResult> DoBackgroundLoginAsync(Uri startUri, Uri expectedEndUri)
+        {
+            Uri endUri = null;
+            var resetEvent = new AutoResetEvent(false);
+            var backgroundBrowser = new WebBrowser();
+            backgroundBrowser.Navigated += (o, e) =>
+            {
+                endUri = e.Uri;
+                resetEvent.Set();
+            };
+            
+            backgroundBrowser.Navigate(startUri);
+            await Task.Factory.StartNew(() => resetEvent.WaitOne());
+            
+            if (endUri == expectedEndUri)
+            {
+                return new BackgroundLoginResult(broker.GetTokenStringFromResponseData(endUri.ToString()));
+            }
+
+            return new BackgroundLoginResult(endUri);
+        }
+
+        /// <summary>
+        /// Takes over the root frame to display a browser to the user
+        /// </summary>
+        /// <param name="startUri">Uri pointing to the start of the authentication process</param>
+        /// <param name="expectedEndUri">Expected callback Uri at successful completion of authentication process</param>
+        /// <returns>Authenticated Auth0User</returns>
+        private async Task<Auth0User> DoInteractiveLoginAsync(Uri startUri, Uri expectedEndUri)
+        {
+            return await this.broker.AuthenticateAsync(startUri, expectedEndUri);
+        }
+
+        /// <summary>
+        /// Augments an authenticated Auth0User with profile information
+        /// </summary>
+        /// <param name="user">Authenticated Auth0User</param>
+        /// <returns>Authenticated Auth0User populated with profile information</returns>
+        private async Task<Auth0User> RetrieveAuthenticatedUserProfileAsync(Auth0User user)
+        {
             var endpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "GET";
@@ -84,7 +140,6 @@ namespace Auth0.SDK
 
             return user;
         }
-
 
         /// <summary>
         ///  Log a user into an Auth0 application given an user name and password.
@@ -181,6 +236,25 @@ namespace Auth0.SDK
             var startUri = new Uri(authorizeUri + "&state=" + this.State);
 
             return startUri;
+        }
+
+        internal class BackgroundLoginResult
+        {
+            internal BackgroundLoginResult(Auth0User user)
+            {
+                User = user;
+                Success = true;
+            }
+
+            internal BackgroundLoginResult(Uri loginUri)
+            {
+                LoginProcessUri = loginUri;
+                Success = false;
+            }
+
+            public Auth0User User { get; private set; }
+            public Uri LoginProcessUri { get; private set; }
+            public bool Success { get; private set; }
         }
     }
 }
