@@ -49,37 +49,36 @@ namespace Auth0.SDK
         /// <summary>
         /// Login a user into an Auth0 application by showing an embedded browser window either showing the widget or skipping it by passing a connection name
         /// </summary>
-        /// <param name="owner">The owner window</param>
         /// <param name="connection">Optional connection name to bypass the login widget</param>
-        /// <remarks>When using openid profile if the user has many attributes the token might get big and the embedded browser (Internet Explorer) won't be able to parse a large URL</remarks>
-        /// </param>
+        /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
         /// <returns>Returns a Task of Auth0User</returns>
         public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
         {
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            // The embedded browser has restrictions on the length of URI it can handle. To get around this, we always make the
+            // authenticate call with scope of 'openid'
+            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, "openid"), new Uri(this.CallbackUrl));
+            
+            // If just 'openid' was not requested, we have all we need and can return straight away
+            if (scope == "openid") return user;
 
+            // If 'openid profile' was requested, we make a call to the UserProfile endpoint to augment the existing profile
+            // details with the provider's user attributes
             var endpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
+            var request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "GET";
 
-            TaskFactory taskFactory = new TaskFactory();
+            var taskFactory = new TaskFactory();
             var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
-            try
+
+            using (var responseStream = response.GetResponseStream())
             {
-                using (Stream responseStream = response.GetResponseStream())
+                using (var streamReader = new StreamReader(responseStream))
                 {
-                    using (StreamReader streamReader = new StreamReader(responseStream))
-                    {
-                        var text = streamReader.ReadToEnd();
-                        user.Profile = JObject.Parse(text);
-                        streamReader.Close();
-                    }
-                    responseStream.Close();
+                    var text = streamReader.ReadToEnd();
+                    user.Profile = JObject.Parse(text);
+                    streamReader.Close();
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                responseStream.Close();
             }
 
             return user;
