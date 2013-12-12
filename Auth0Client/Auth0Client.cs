@@ -51,20 +51,25 @@ namespace Auth0.SDK
         /// Login a user into an Auth0 application. Attempts to do a background login, but if unsuccessful shows an embedded browser window either showing the widget or skipping it by passing a connection name
         /// </summary>
         /// <param name="connection">Optional connection name to bypass the login widget</param>
-        /// <remarks>When using openid profile if the user has many attributes the token might get big and the embedded browser (Internet Explorer) won't be able to parse a large URL</remarks>
+        /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
         /// <returns>Returns a Task of Auth0User</returns>
         public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
         {
-            var startUri = GetStartUri(connection, scope);
+            // Always make just the basic Authorize call to avoid truncation of profile attributes due to limited URI length in embedded browser
+            var startUri = GetStartUri(connection, "openid");
             var expectedEndUri = new Uri(this.CallbackUrl);
 
+            // Attempt a background login for returning users
             var backgroundLoginResult = await DoBackgroundLoginAsync(startUri, expectedEndUri);
             
             var user = backgroundLoginResult.Success
                 ? backgroundLoginResult.User
                 : await DoInteractiveLoginAsync(backgroundLoginResult.LoginProcessUri, expectedEndUri);
             
-            return await RetrieveAuthenticatedUserProfileAsync(user);
+            // If scope was specified as 'openid profile', augment basic profile with provider profile attributes
+            return (scope == "openid profile")
+                ? await RetrieveProviderProfileAsync(user)
+                : user;
         }
 
         /// <summary>
@@ -111,31 +116,30 @@ namespace Auth0.SDK
         /// </summary>
         /// <param name="user">Authenticated Auth0User</param>
         /// <returns>Authenticated Auth0User populated with profile information</returns>
-        private async Task<Auth0User> RetrieveAuthenticatedUserProfileAsync(Auth0User user)
+        private async Task<Auth0User> RetrieveProviderProfileAsync(Auth0User user)
         {
-            var endpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
-            request.Method = "GET";
+            var userProfileEndpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
+            var userProfileRequest = (HttpWebRequest)WebRequest.Create(userProfileEndpoint);
+            userProfileRequest.Method = "GET";
 
-            TaskFactory taskFactory = new TaskFactory();
-            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
-            try
+            var taskFactory = new TaskFactory();
+            var response = await taskFactory.FromAsync<WebResponse>(userProfileRequest.BeginGetResponse, userProfileRequest.EndGetResponse, null);
+
+            using (var responseStream = response.GetResponseStream())
             {
-                using (Stream responseStream = response.GetResponseStream())
+                using (var streamReader = new StreamReader(responseStream))
                 {
-                    using (StreamReader streamReader = new StreamReader(responseStream))
-                    {
                         var text = streamReader.ReadToEnd();
-                        user.Profile = JObject.Parse(text);
+                        var profileJsonObject = JObject.Parse(text);
+                    
+                        // Augment with extra user profile attributes from provider
+                        foreach (var item in profileJsonObject.Properties())
+                            user.Profile.Add(item.Name, item.Value);
+                        
                         streamReader.Close();
                     }
                     responseStream.Close();
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
 
             return user;
         }
