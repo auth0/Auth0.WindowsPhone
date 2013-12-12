@@ -54,28 +54,32 @@ namespace Auth0.SDK
         /// <returns>Returns a Task of Auth0User</returns>
         public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
         {
-            // The embedded browser has restrictions on the length of URI it can handle. To get around this, we always make the
-            // authenticate call with scope of 'openid'
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, "openid"), new Uri(this.CallbackUrl));
-            
-            // If just 'openid' was not requested, we have all we need and can return straight away
-            if (scope == "openid") return user;
+            if (scope == "openid")
+                return await this.broker.AuthenticateAsync(GetStartUri(connection, "openid"), new Uri(this.CallbackUrl));
 
-            // If 'openid profile' was requested, we make a call to the UserProfile endpoint to augment the existing profile
-            // details with the provider's user attributes
-            var endpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
-            var request = (HttpWebRequest)WebRequest.Create(endpoint);
-            request.Method = "GET";
+            // There are restrictions on the length of the URI the Windows Phone embedded browser can handle.
+            // If a user's profile has too many attributes, we could lose some from the end.
+            // Because of this, we always use the "openid" scope, then retrieve user info from the UserProfile endpoint
+            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, "openid"), new Uri(this.CallbackUrl));
+                
+            var userProfileEndpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
+            var userProfileRequest = (HttpWebRequest)WebRequest.Create(userProfileEndpoint);
+            userProfileRequest.Method = "GET";
 
             var taskFactory = new TaskFactory();
-            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
+            var response = await taskFactory.FromAsync<WebResponse>(userProfileRequest.BeginGetResponse, userProfileRequest.EndGetResponse, null);
 
             using (var responseStream = response.GetResponseStream())
             {
                 using (var streamReader = new StreamReader(responseStream))
                 {
                     var text = streamReader.ReadToEnd();
-                    user.Profile = JObject.Parse(text);
+                    var profileJsonObject = JObject.Parse(text);
+                    
+                    // Augment openid details with extra user profile attributes from provider
+                    foreach (var item in profileJsonObject.Properties())
+                        user.Profile.Add(item.Name, item.Value);
+                        
                     streamReader.Close();
                 }
                 responseStream.Close();
