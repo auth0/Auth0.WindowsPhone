@@ -18,7 +18,7 @@
 3. Trigger login (with Widget) 
 
   ~~~cs
-  auth0.LoginAsync(this).ContinueWith(t =>
+  auth0.LoginAsync().ContinueWith(t =>
   {
   /* Use t.Result to do wonderful things, e.g.: 
     - get user email => t.Result.Profile["email"].ToString()
@@ -34,13 +34,13 @@
 Or you can use the connection as a parameter (e.g. here we login with a Windows Azure AD account)
 
 ~~~cs
-auth0.LoginAsync(this, "auth0waadtests.onmicrosoft.com").ContinueWith(t => .. );
+auth0.LoginAsync("auth0waadtests.onmicrosoft.com").ContinueWith(t => .. );
 ~~~
 
 Or a database
 
 ~~~cs
-auth0.LoginAsync(this, "my-db-connection", "username", "password").ContinueWith(t => .. );
+auth0.LoginAsync("my-db-connection", "username", "password").ContinueWith(t => .. );
 ~~~
 
 ---
