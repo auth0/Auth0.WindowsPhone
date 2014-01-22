@@ -15,25 +15,21 @@ namespace Auth0.SDK
     /// </summary>
     public partial class Auth0Client
     {
-        private const string AuthorizeUrl = "https://{0}.auth0.com/authorize?client_id={1}&scope={2}&redirect_uri={3}&response_type=token&connection={4}";
-        private const string LoginWidgetUrl = "https://{0}.auth0.com/login/?client={1}&scope={2}&redirect_uri={3}&response_type=token";
-        private const string ResourceOwnerEndpoint = "https://{0}.auth0.com/oauth/ro";
-        private const string UserInfoEndpoint = "https://{0}.auth0.com/userinfo?access_token={1}";
-        private const string DefaultCallback = "https://{0}.auth0.com/mobile";
+        private const string AuthorizeUrl = "https://{0}/authorize?client_id={1}&scope={2}&redirect_uri={3}&response_type=token&connection={4}";
+        private const string LoginWidgetUrl = "https://{0}/login/?client={1}&scope={2}&redirect_uri={3}&response_type=token";
+        private const string ResourceOwnerEndpoint = "https://{0}/oauth/ro";
+        private const string UserInfoEndpoint = "https://{0}/userinfo?access_token={1}";
+        private const string DefaultCallback = "https://{0}/mobile";
 
-        private readonly string subDomain;
+        private readonly string domain;
         private readonly string clientId;
-        private readonly string clientSecret;
-
+        
         private readonly AuthenticationBroker broker;
 
-        internal string State { get; set; }
-
-        public Auth0Client(string subDomain, string clientId, string clientSecret)
+        public Auth0Client(string domain, string clientId)
         {
-            this.subDomain = subDomain;
+            this.domain = domain;
             this.clientId = clientId;
-            this.clientSecret = clientSecret;
             this.broker = new AuthenticationBroker();
         }
 
@@ -43,9 +39,11 @@ namespace Auth0.SDK
         {
             get
             {
-                return string.Format(DefaultCallback, this.subDomain);
+                return string.Format(DefaultCallback, this.domain);
             }
         }
+
+        internal string State { get; set; }
 
         /// <summary>
         /// Login a user into an Auth0 application. Attempts to do a background login, but if unsuccessful shows an embedded browser window either showing the widget or skipping it by passing a connection name
@@ -118,7 +116,7 @@ namespace Auth0.SDK
         /// <returns>Authenticated Auth0User populated with profile information</returns>
         private async Task<Auth0User> RetrieveProviderProfileAsync(Auth0User user)
         {
-            var userProfileEndpoint = string.Format(UserInfoEndpoint, this.subDomain, user.Auth0AccessToken);
+            var userProfileEndpoint = string.Format(UserInfoEndpoint, this.domain, user.Auth0AccessToken);
             var userProfileRequest = (HttpWebRequest)WebRequest.Create(userProfileEndpoint);
             userProfileRequest.Method = "GET";
 
@@ -129,17 +127,17 @@ namespace Auth0.SDK
             {
                 using (var streamReader = new StreamReader(responseStream))
                 {
-                        var text = streamReader.ReadToEnd();
-                        var profileJsonObject = JObject.Parse(text);
+                    var text = streamReader.ReadToEnd();
+                    var profileJsonObject = JObject.Parse(text);
                     
-                        // Augment with extra user profile attributes from provider
-                        foreach (var item in profileJsonObject.Properties())
-                            user.Profile.Add(item.Name, item.Value);
+                    // Augment with extra user profile attributes from provider
+                    foreach (var item in profileJsonObject.Properties())
+                        user.Profile.Add(item.Name, item.Value);
                         
-                        streamReader.Close();
-                    }
-                    responseStream.Close();
+                    streamReader.Close();
                 }
+                responseStream.Close();
+            }
 
             return user;
         }
@@ -151,24 +149,23 @@ namespace Auth0.SDK
         /// <param name="connection" type="string">The name of the connection to use in Auth0. Connection defines an Identity Provider.</param>
         /// <param name="userName" type="string">User name.</param>
         /// <param name="password type="string"">User password.</param>
-        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid profile")
+        /// <param name="scope">Scope.</param>
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid")
         {
-            TaskFactory taskFactory = new TaskFactory();
+            var taskFactory = new TaskFactory();
 
-
-            var endpoint = string.Format(ResourceOwnerEndpoint, this.subDomain);
+            var endpoint = string.Format(ResourceOwnerEndpoint, this.domain);
             var parameters = String.Format(
-                "client_id={0}&client_secret={1}&connection={2}&username={3}&password={4}&grant_type=password&scope={5}",
+                "client_id={0}&connection={1}&username={2}&password={3}&grant_type=password&scope={4}",
                 this.clientId,
-                this.clientSecret,
                 connection,
                 userName,
                 password,
-                scope);
+                Uri.EscapeDataString(scope));
 
             byte[] postData = Encoding.UTF8.GetBytes(parameters);
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
+            var request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = postData.Length;
@@ -181,6 +178,7 @@ namespace Auth0.SDK
             };
             
             var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
+
             try
             {
                 using (Stream responseStream = response.GetResponseStream())
@@ -241,8 +239,8 @@ namespace Auth0.SDK
             }
 
             var authorizeUri = !string.IsNullOrWhiteSpace(connection) ?
-                string.Format(AuthorizeUrl, subDomain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl), connection) :
-                string.Format(LoginWidgetUrl, subDomain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl));
+                string.Format(AuthorizeUrl, domain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl), connection) :
+                string.Format(LoginWidgetUrl, domain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl));
 
             this.State = new string(chars);
             var startUri = new Uri(authorizeUri + "&state=" + this.State);
@@ -265,7 +263,9 @@ namespace Auth0.SDK
             }
 
             public Auth0User User { get; private set; }
+
             public Uri LoginProcessUri { get; private set; }
+
             public bool Success { get; private set; }
         }
     }
