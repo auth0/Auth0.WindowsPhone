@@ -170,7 +170,7 @@ namespace Auth0.SDK
         }
 
 
-        private Auth0User GetTokenStringFromResponseData(string responseData)
+        internal Auth0User GetTokenStringFromResponseData(string responseData)
         {
             var url = new Uri(responseData);
             var fragment = FormDecode(url.Fragment);
