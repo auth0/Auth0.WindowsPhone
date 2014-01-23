@@ -1,5 +1,6 @@
 ﻿using Auth0.SDK;
 using Microsoft.Phone.Controls;
+using System.Collections.Generic;
 using System.Windows;
 
 namespace SampleApp
@@ -18,12 +19,35 @@ namespace SampleApp
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
             var auth0 = new Auth0Client(
-                "mdocs",
-                "eqzRkV0T2PcSG9qEYTSmYGN3YaRLfz4M");
+                "contoso.auth0.com",
+                "cEPMBtnqXQdFBuUyJeAugh6W7kLIoepB");
 
-            var user = await auth0.LoginAsync("test-bhs", "foo@dasd.com", "bar", "openid");
+            var user = await auth0.LoginAsync();
+            //var user = await auth0.LoginAsync("google-oauth2");
+            //var user = await auth0.LoginAsync("sql-azure-database", "foo@dasd.com", "bar");
+            
+            MessageBox.Show(
+                string.Format(
+                    "Your email: {0}\r\nYour id_token: {1}",
+                        user.Profile["email"], user.IdToken));
 
-            MessageBox.Show(user.IdToken);
+            if (MessageBox.Show(
+                "Do you want a delegation token?", 
+                "Delegation Token", 
+                MessageBoxButton.OK) == MessageBoxResult.OK)
+            {
+                var targetClientId = "HmqDkk9qtDgxsiSKpLKzc51xD75hgiRW";
+                var options = new Dictionary<string, string>
+                {
+                    { "scope", "openid profile" }
+                };
+
+                //var delegationResult = await auth0.GetDelegationToken(targetClientId);
+                var delegationResult = await auth0.GetDelegationToken(targetClientId, options);
+
+                MessageBox.Show(
+                    string.Format("Your delegation token: {0}", delegationResult["id_token"]));
+            }
         }
 
         // Sample code for building a localized ApplicationBar

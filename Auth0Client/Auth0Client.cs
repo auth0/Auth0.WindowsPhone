@@ -1,4 +1,3 @@
-using System.Threading;
 using Microsoft.Phone.Controls;
 using Newtonsoft.Json.Linq;
 using System;
@@ -6,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Auth0.SDK
@@ -18,6 +18,7 @@ namespace Auth0.SDK
         private const string AuthorizeUrl = "https://{0}/authorize?client_id={1}&scope={2}&redirect_uri={3}&response_type=token&connection={4}";
         private const string LoginWidgetUrl = "https://{0}/login/?client={1}&scope={2}&redirect_uri={3}&response_type=token";
         private const string ResourceOwnerEndpoint = "https://{0}/oauth/ro";
+        private const string DelegationEndpoint = "https://{0}/delegation";
         private const string UserInfoEndpoint = "https://{0}/userinfo?access_token={1}";
         private const string DefaultCallback = "https://{0}/mobile";
 
@@ -65,9 +66,176 @@ namespace Auth0.SDK
                 : await DoInteractiveLoginAsync(backgroundLoginResult.LoginProcessUri, expectedEndUri);
             
             // If scope was specified as 'openid profile', augment basic profile with provider profile attributes
-            return (scope == "openid profile")
-                ? await RetrieveProviderProfileAsync(user)
-                : user;
+            this.CurrentUser = (scope == "openid profile") ?
+                await RetrieveProviderProfileAsync(user) :
+                user;
+
+            return this.CurrentUser;
+        }
+
+        /// <summary>
+        ///  Log a user into an Auth0 application given an user name and password.
+        /// </summary>
+        /// <returns>Task that will complete when the user has finished authentication.</returns>
+        /// <param name="connection" type="string">The name of the connection to use in Auth0. Connection defines an Identity Provider.</param>
+        /// <param name="userName" type="string">User name.</param>
+        /// <param name="password type="string"">User password.</param>
+        /// <param name="scope">Scope.</param>
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid")
+        {
+            var taskFactory = new TaskFactory();
+
+            var endpoint = string.Format(ResourceOwnerEndpoint, this.domain);
+            var parameters = String.Format(
+                "client_id={0}&connection={1}&username={2}&password={3}&grant_type=password&scope={4}",
+                this.clientId,
+                connection,
+                userName,
+                password,
+                Uri.EscapeDataString(scope));
+
+            byte[] postData = Encoding.UTF8.GetBytes(parameters);
+
+            var request = (HttpWebRequest)WebRequest.Create(endpoint);
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = postData.Length;
+
+            using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
+            {
+                await stream.WriteAsync(postData, 0, postData.Length);
+                await stream.FlushAsync();
+                stream.Close();
+            };
+
+            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
+
+            try
+            {
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    using (StreamReader streamReader = new StreamReader(responseStream))
+                    {
+                        var text = await streamReader.ReadToEndAsync();
+                        var data = JObject.Parse(text).ToObject<Dictionary<string, string>>();
+
+                        if (data.ContainsKey("error"))
+                        {
+                            throw new UnauthorizedAccessException("Error authenticating: " + data["error"]);
+                        }
+                        else if (data.ContainsKey("access_token"))
+                        {
+                            this.CurrentUser = new Auth0User(data);
+                        }
+                        else
+                        {
+                            throw new UnauthorizedAccessException("Expected access_token in access token response, but did not receive one.");
+                        }
+
+                        streamReader.Close();
+                    }
+                    responseStream.Close();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return this.CurrentUser;
+        }
+
+        /// <summary>
+        /// Get a delegation token
+        /// </summary>
+        /// <returns>Delegation token result.</returns>
+        /// <param name="targetClientId">Target client ID.</param>
+        /// <param name="options">Custom parameters.</param>
+        public async Task<JObject> GetDelegationToken(string targetClientId, IDictionary<string, string> options = null)
+        {
+            var id_token = string.Empty;
+            options = options ?? new Dictionary<string, string>();
+
+            // ensure id_token
+            if (options.ContainsKey("id_token"))
+            {
+                id_token = options["id_token"];
+                options.Remove("id_token");
+            }
+            else
+            {
+                id_token = this.CurrentUser.IdToken;
+            }
+
+            if (string.IsNullOrEmpty(id_token))
+            {
+                throw new InvalidOperationException(
+                        "You need to login first or specify a value for id_token parameter.");
+            }
+
+            var taskFactory = new TaskFactory();
+
+            var endpoint = string.Format(DelegationEndpoint, this.domain);
+            var parameters = String.Format(
+                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&id_token={0}&target={1}&client_id={2}",
+                id_token,
+                targetClientId,
+                this.clientId);
+
+            foreach (var option in options)
+            {
+                if (!string.IsNullOrEmpty(option.Value))
+                {
+                    parameters += string.Format("&{0}={1}", option.Key, option.Value);
+                }
+            }
+
+            byte[] postData = Encoding.UTF8.GetBytes(parameters);
+
+            var request = (HttpWebRequest)WebRequest.Create(endpoint);
+            request.Method = "POST";
+            request.ContentType = "application/x-www-form-urlencoded";
+            request.ContentLength = postData.Length;
+
+            using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
+            {
+                await stream.WriteAsync(postData, 0, postData.Length);
+                await stream.FlushAsync();
+                stream.Close();
+            };
+
+            JObject delegationResult;
+            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
+
+            try
+            {
+                using (Stream responseStream = response.GetResponseStream())
+                {
+                    using (var streamReader = new StreamReader(responseStream))
+                    {
+                        var text = await streamReader.ReadToEndAsync();
+                        delegationResult = JObject.Parse(text);
+                        streamReader.Close();
+                    }
+
+                    responseStream.Close();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return delegationResult;
+        }
+
+        /// <summary>
+        /// Log a user out of a Auth0 application.
+        /// </summary>
+        public async Task LogoutAsync()
+        {
+            this.CurrentUser = null;
+            await this.broker.Logout();
         }
 
         /// <summary>
@@ -132,100 +300,17 @@ namespace Auth0.SDK
                     
                     // Augment with extra user profile attributes from provider
                     foreach (var item in profileJsonObject.Properties())
+                    {
                         user.Profile.Add(item.Name, item.Value);
+                    }
                         
                     streamReader.Close();
                 }
+
                 responseStream.Close();
             }
 
             return user;
-        }
-
-        /// <summary>
-        ///  Log a user into an Auth0 application given an user name and password.
-        /// </summary>
-        /// <returns>Task that will complete when the user has finished authentication.</returns>
-        /// <param name="connection" type="string">The name of the connection to use in Auth0. Connection defines an Identity Provider.</param>
-        /// <param name="userName" type="string">User name.</param>
-        /// <param name="password type="string"">User password.</param>
-        /// <param name="scope">Scope.</param>
-        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid")
-        {
-            var taskFactory = new TaskFactory();
-
-            var endpoint = string.Format(ResourceOwnerEndpoint, this.domain);
-            var parameters = String.Format(
-                "client_id={0}&connection={1}&username={2}&password={3}&grant_type=password&scope={4}",
-                this.clientId,
-                connection,
-                userName,
-                password,
-                Uri.EscapeDataString(scope));
-
-            byte[] postData = Encoding.UTF8.GetBytes(parameters);
-
-            var request = (HttpWebRequest)WebRequest.Create(endpoint);
-            request.Method = "POST";
-            request.ContentType = "application/x-www-form-urlencoded";
-            request.ContentLength = postData.Length;
-              
-            using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
-            {
-                await stream.WriteAsync(postData, 0, postData.Length);
-                await stream.FlushAsync();
-                stream.Close();
-            };
-            
-            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
-
-            try
-            {
-                using (Stream responseStream = response.GetResponseStream())
-                {
-                    using (StreamReader streamReader = new StreamReader(responseStream))
-                    {
-                        var text = await streamReader.ReadToEndAsync();
-                        var data = JObject.Parse(text).ToObject<Dictionary<string, string>>();
-
-                        if (data.ContainsKey("error"))
-                        {
-                            throw new UnauthorizedAccessException("Error authenticating: " + data["error"]);
-                        }
-                        else if (data.ContainsKey("access_token"))
-                        {
-                            this.SetupCurrentUser(data);
-                        }
-                        else
-                        {
-                            throw new UnauthorizedAccessException("Expected access_token in access token response, but did not receive one.");
-                        }
-
-                        streamReader.Close();
-                    }
-                    responseStream.Close();
-                }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-
-            return this.CurrentUser;
-        }
-
-        /// <summary>
-        /// Log a user out of a Auth0 application.
-        /// </summary>
-        public async Task LogoutAsync()
-        {
-            this.CurrentUser = null;
-            await this.broker.Logout();
-        }
-
-        private void SetupCurrentUser(IDictionary<string, string> accountProperties)
-        {
-            this.CurrentUser = new Auth0User(accountProperties);
         }
 
         private Uri GetStartUri(string connection, string scope)
@@ -239,8 +324,8 @@ namespace Auth0.SDK
             }
 
             var authorizeUri = !string.IsNullOrWhiteSpace(connection) ?
-                string.Format(AuthorizeUrl, domain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl), connection) :
-                string.Format(LoginWidgetUrl, domain, clientId, scope, Uri.EscapeDataString(this.CallbackUrl));
+                string.Format(AuthorizeUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl), connection) :
+                string.Format(LoginWidgetUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl));
 
             this.State = new string(chars);
             var startUri = new Uri(authorizeUri + "&state=" + this.State);
