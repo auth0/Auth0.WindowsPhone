@@ -16,23 +16,24 @@ namespace SampleApp
             //BuildLocalizedApplicationBar();
         }
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
-        {
-            var auth0 = new Auth0Client(
+        private Auth0Client auth0 = new Auth0Client(
                 "contoso.auth0.com",
                 "cEPMBtnqXQdFBuUyJeAugh6W7kLIoepB");
 
-            var user = await auth0.LoginAsync();
+        private async void Button_Click(object sender, RoutedEventArgs e)
+        {
+            
+            await auth0.LoginAsync();
             //var user = await auth0.LoginAsync("google-oauth2");
             //var user = await auth0.LoginAsync("sql-azure-database", "foo@dasd.com", "bar");
             
             MessageBox.Show(
                 string.Format(
                     "Your email: {0}\r\nYour id_token: {1}",
-                        user.Profile["email"], user.IdToken));
+                        auth0.CurrentUser.Profile["email"], auth0.CurrentUser.IdToken));
 
             if (MessageBox.Show(
-                "Do you want a delegation token?", 
+                "Do you want a delegation token to call another API?", 
                 "Delegation Token", 
                 MessageBoxButton.OK) == MessageBoxResult.OK)
             {
@@ -42,12 +43,17 @@ namespace SampleApp
                     { "scope", "openid profile" }
                 };
 
-                //var delegationResult = await auth0.GetDelegationToken(targetClientId);
                 var delegationResult = await auth0.GetDelegationToken(targetClientId, options);
 
                 MessageBox.Show(
                     string.Format("Your delegation token: {0}", delegationResult["id_token"]));
             }
+        }
+
+        private async void Logout_Click(object sender, RoutedEventArgs e)
+        {
+            await auth0.LogoutAsync();
+            MessageBox.Show("Logout successful!");
         }
 
         // Sample code for building a localized ApplicationBar
