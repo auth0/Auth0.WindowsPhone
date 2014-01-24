@@ -270,26 +270,5 @@ namespace Auth0.SDK
 
             return startUri;
         }
-
-        private class BackgroundLoginResult
-        {
-            internal BackgroundLoginResult(Auth0User user)
-            {
-                User = user;
-                Success = true;
-            }
-
-            internal BackgroundLoginResult(Uri loginUri)
-            {
-                LoginProcessUri = loginUri;
-                Success = false;
-            }
-
-            public Auth0User User { get; private set; }
-
-            public Uri LoginProcessUri { get; private set; }
-
-            public bool Success { get; private set; }
-        }
     }
 }
