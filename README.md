@@ -10,8 +10,8 @@
 
   ~~~cs
   var auth0 = new Auth0Client(
-     "{YOUR_AUTH0_DOMAIN}",
-     "{YOUR_CLIENT_ID}");
+     "{YOUR_AUTH0_DOMAIN}",  // e.g. contoso.auth0.com
+     "{YOUR_CLIENT_ID}");    // it's in Auth0 app settings
   ~~~
 
 3. Trigger login (with Widget) 
