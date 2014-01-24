@@ -88,6 +88,8 @@
     <Compile Include="Auth0Client.cs" />
     <Compile Include="Auth0User.cs" />
     <Compile Include="AuthenticationBroker.cs" />
+    <Compile Include="AuthenticationCancelException.cs" />
+    <Compile Include="AuthenticationErrorException.cs" />
     <Compile Include="LoginPage.xaml.cs">
       <DependentUpon>LoginPage.xaml</DependentUpon>
     </Compile>

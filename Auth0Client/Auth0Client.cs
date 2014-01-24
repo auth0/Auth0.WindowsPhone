@@ -62,25 +62,18 @@ namespace Auth0.SDK
 
             TaskFactory taskFactory = new TaskFactory();
             var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
-            try
+            using (Stream responseStream = response.GetResponseStream())
             {
-                using (Stream responseStream = response.GetResponseStream())
+                using (StreamReader streamReader = new StreamReader(responseStream))
                 {
-                    using (StreamReader streamReader = new StreamReader(responseStream))
-                    {
-                        var text = streamReader.ReadToEnd();
-                        user.Profile = JObject.Parse(text);
+                    var text = streamReader.ReadToEnd();
+                    user.Profile = JObject.Parse(text);
 
-                        this.CurrentUser = user;
+                    this.CurrentUser = user;
 
-                        streamReader.Close();
-                    }
-                    responseStream.Close();
+                    streamReader.Close();
                 }
-            }
-            catch (Exception ex)
-            {
-                throw ex;
+                responseStream.Close();
             }
 
             return this.CurrentUser;

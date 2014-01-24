@@ -1,5 +1,6 @@
 ﻿using Auth0.SDK;
 using Microsoft.Phone.Controls;
+using System;
 using System.Collections.Generic;
 using System.Windows;
 
@@ -22,11 +23,22 @@ namespace SampleApp
 
         private async void Button_Click(object sender, RoutedEventArgs e)
         {
-            
-            await auth0.LoginAsync();
-            //var user = await auth0.LoginAsync("google-oauth2");
-            //var user = await auth0.LoginAsync("sql-azure-database", "foo@dasd.com", "bar");
-            
+            try
+            {
+                await auth0.LoginAsync();
+                //var user = await auth0.LoginAsync("google-oauth2");
+                //var user = await auth0.LoginAsync("sql-azure-database", "foo@dasd.com", "bar");
+            }
+            catch (AuthenticationCancelException)
+            {
+                return;
+            }
+            catch (AuthenticationErrorException ex)
+            {
+                MessageBox.Show("Error: " + ex.Message);
+                return;
+            }
+
             MessageBox.Show(
                 string.Format(
                     "Your email: {0}\r\nYour id_token: {1}",

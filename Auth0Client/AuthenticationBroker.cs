@@ -115,8 +115,7 @@ namespace Auth0.SDK
                     string message;
                     if (this.responseStatus == PhoneAuthenticationStatus.UserCancel)
                     {
-                        message = "Authentication has been canceled";
-                        throw new InvalidOperationException(message);
+                        throw new AuthenticationCancelException();
                     }
                     else
                     {
@@ -125,7 +124,7 @@ namespace Auth0.SDK
                                                 this.responseErrorDetail);
                     }
 
-                    throw new InvalidOperationException(message);
+                    throw new AuthenticationErrorException(message);
                 }
 
                 return GetTokenStringFromResponseData(this.responseData);
