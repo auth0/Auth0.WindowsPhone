@@ -23,7 +23,9 @@ namespace Auth0.SDK
 
         UserCancel = 1,
 
-        ErrorHttp = 2
+        ErrorHttp = 2,
+
+        ErrorServer = 3
     }
 
     /// <summary>
@@ -55,8 +57,8 @@ namespace Auth0.SDK
         /// </summary>
         public Uri EndUri { get; private set; }
 
-        private string responseData = "";
-        private uint responseErrorDetail = 0;
+        private string responseData = string.Empty;
+        private string responseErrorDetail = string.Empty;
         private PhoneAuthenticationStatus responseStatus = PhoneAuthenticationStatus.UserCancel;
         private AutoResetEvent authenticateFinishedEvent = new AutoResetEvent(false);
         private LoginPage page;
@@ -120,7 +122,7 @@ namespace Auth0.SDK
                     else
                     {
                         message = string.Format(CultureInfo.InvariantCulture,
-                                                "Authentication has failed",
+                                                "Authentication has failed. {0}",
                                                 this.responseErrorDetail);
                     }
 
@@ -156,7 +158,7 @@ namespace Auth0.SDK
             this.page = page;
         }
 
-        internal void OnAuthenticationFinished(string data, PhoneAuthenticationStatus status, uint error)
+        internal void OnAuthenticationFinished(string data, PhoneAuthenticationStatus status, string error)
         {
             this.responseData = data;
             this.responseStatus = status;
