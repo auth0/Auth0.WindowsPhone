@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
@@ -20,8 +21,9 @@ namespace Auth0.SDK
     /// </summary>
     public partial class LoginPage : PhoneApplicationPage
     {
-        private string responseData = "";
-        private uint responseErrorDetail = 0;
+        private const string NoDetailsAvailableMessage = "No details available.";
+        private string responseData = string.Empty;
+        private string responseErrorDetail = string.Empty;
         private PhoneAuthenticationStatus responseStatus = PhoneAuthenticationStatus.UserCancel;
 
         // We need to keep this state to make sure we do the right thing even during
@@ -126,17 +128,44 @@ namespace Auth0.SDK
         /// </summary>
         private void BrowserControl_Navigating(object sender, NavigatingEventArgs e)
         {
-            if (e.Uri == Broker.EndUri)
+            if (EqualsWithoutQueryString(e.Uri, Broker.EndUri))
             {
-                responseData = e.Uri.ToString();
-                responseStatus = PhoneAuthenticationStatus.Success;
-
+                if (e.Uri.Query.StartsWith("?error"))
+                {
+                    responseStatus = PhoneAuthenticationStatus.ErrorServer;
+                    responseErrorDetail = NoDetailsAvailableMessage;
+                    var match = Regex.Match(e.Uri.Query, @"\?error=([^&]+)&error_description=([^&]+).*", RegexOptions.None);
+                    if (match.Success)
+                    {
+                        responseErrorDetail = string.Format("Error: {0}. Description: {1}",
+                            HttpUtility.UrlDecode(match.Groups[1].Value),
+                            HttpUtility.UrlDecode(match.Groups[2].Value));
+                    }
+                }
+                else
+                {
+                    responseData = e.Uri.ToString();
+                    responseStatus = PhoneAuthenticationStatus.Success;
+                }
+              
                 authenticationFinished = true;
 
                 // Navigate back now.
-                ShowProgressBar();
-                NavigationService.GoBack();
+                this.NavigateBackWithProgress();
             }
+        }
+
+        /// <summary>
+        /// Compares to URIs without taking the Query into account.
+        /// </summary>
+        /// <param name="uri">One of the URIs to compare.</param>
+        /// <param name="otherUri">The other URI to use in the comparison.</param>
+        /// <returns>True if the URIs are equal (except for the query), false otherwise.</returns>
+        private bool EqualsWithoutQueryString(Uri uri, Uri otherUri)
+        {
+            return uri.AbsolutePath == otherUri.AbsolutePath
+                            && uri.Host == otherUri.Host
+                            && uri.Scheme == otherUri.Scheme;
         }
 
         /// <summary>
@@ -149,12 +178,12 @@ namespace Auth0.SDK
             if (navEx != null)
             {
                 // Pass along the provided error information.
-                responseErrorDetail = (uint)navEx.StatusCode;
+                responseErrorDetail = string.Format("Error code: {0}", navEx.StatusCode);
             }
             else
             {
                 // No error information available.
-                responseErrorDetail = 0;
+                responseErrorDetail = NoDetailsAvailableMessage;
             }
             responseStatus = PhoneAuthenticationStatus.ErrorHttp;
 
@@ -162,6 +191,14 @@ namespace Auth0.SDK
             e.Handled = true;
 
             // Navigate back now.
+            this.NavigateBackWithProgress();
+        }
+
+        /// <summary>
+        /// Displays the progress bar and navigates to the previous page.
+        /// </summary>
+        private void NavigateBackWithProgress()
+        {
             ShowProgressBar();
             NavigationService.GoBack();
         }
