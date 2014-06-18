@@ -21,7 +21,7 @@
             x:Name="progress"  
             IsIndeterminate="True" />
         <phone:WebBrowser 
-            x:Name="browserControl" 
+            x:Name="BrowserControl" 
             IsScriptEnabled="True" 
             Visibility="Collapsed" />
     </Grid>

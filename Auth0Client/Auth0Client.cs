@@ -1,4 +1,6 @@
+#if WINDOWS_PHONE
 using Microsoft.Phone.Controls;
+#endif
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -70,10 +72,7 @@ namespace Auth0.SDK
                     user.Profile = JObject.Parse(text);
 
                     this.CurrentUser = user;
-
-                    streamReader.Close();
                 }
-                responseStream.Close();
             }
 
             return this.CurrentUser;
@@ -105,13 +104,14 @@ namespace Auth0.SDK
             var request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
+#if WINDOWS_PHONE
             request.ContentLength = postData.Length;
+#endif
 
             using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
             {
                 await stream.WriteAsync(postData, 0, postData.Length);
                 await stream.FlushAsync();
-                stream.Close();
             };
 
             var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
@@ -137,10 +137,7 @@ namespace Auth0.SDK
                         {
                             throw new UnauthorizedAccessException("Expected access_token in access token response, but did not receive one.");
                         }
-
-                        streamReader.Close();
                     }
-                    responseStream.Close();
                 }
             }
             catch (Exception)
@@ -201,13 +198,14 @@ namespace Auth0.SDK
             var request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
+#if WINDOWS_PHONE
             request.ContentLength = postData.Length;
+#endif
 
             using (var stream = await taskFactory.FromAsync<Stream>(request.BeginGetRequestStream, request.EndGetRequestStream, null))
             {
                 await stream.WriteAsync(postData, 0, postData.Length);
                 await stream.FlushAsync();
-                stream.Close();
             };
 
             JObject delegationResult;
@@ -221,10 +219,7 @@ namespace Auth0.SDK
                     {
                         var text = await streamReader.ReadToEndAsync();
                         delegationResult = JObject.Parse(text);
-                        streamReader.Close();
                     }
-
-                    responseStream.Close();
                 }
             }
             catch (Exception)
