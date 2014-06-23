@@ -233,7 +233,7 @@ namespace Auth0.SDK
         /// <summary>
         /// Log a user out of a Auth0 application.
         /// </summary>
-        public async Task LogoutAsync()
+        public virtual async Task LogoutAsync()
         {
             this.CurrentUser = null;
             await this.broker.Logout();
