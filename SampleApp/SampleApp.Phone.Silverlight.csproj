@@ -10,7 +10,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SampleApp</RootNamespace>
-    <AssemblyName>SampleApp</AssemblyName>
+    <AssemblyName>SampleApp.Phone.Silverlight</AssemblyName>
     <TargetFrameworkIdentifier>WindowsPhone</TargetFrameworkIdentifier>
     <TargetFrameworkVersion>v8.0</TargetFrameworkVersion>
     <SilverlightVersion>$(TargetFrameworkVersion)</SilverlightVersion>
@@ -149,9 +149,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Auth0Client\Auth0Client.csproj">
+    <ProjectReference Include="..\Auth0Client\Auth0Client.Phone.Silverlight.csproj">
       <Project>{088072EA-5157-4C40-B41B-8BB7B7187FCA}</Project>
-      <Name>Auth0Client</Name>
+      <Name>Auth0Client.Phone.Silverlight</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

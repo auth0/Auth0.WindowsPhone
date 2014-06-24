@@ -1,0 +1,33 @@
+﻿<Page
+    x:Class="SampleApp.Phone81.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:SampleApp.Phone81"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+    </Grid.RowDefinitions>
+        <StackPanel x:Name="TitlePanel" Grid.Row="0" Margin="12,17,0,28">
+            <TextBlock FontSize="16" Margin="12,0">
+            	<Run Text="auth0 test"/>
+            	<LineBreak/>
+            	<Run/>
+            </TextBlock>
+            <TextBlock Margin="9,-7,0,0" FontSize="48" FontWeight="SemiLight">
+            	<Run Text="test"/>
+            	<LineBreak/>
+            	<Run/>
+            </TextBlock>
+        </StackPanel>
+    <StackPanel Grid.Row="1"  HorizontalAlignment="Center">
+            <Button Content="Login"  Click="Button_Click"></Button>
+            <Button Content="Log out"  Click="Logout_Click"></Button>
+        </StackPanel>
+    </Grid>
+</Page>

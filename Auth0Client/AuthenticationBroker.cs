@@ -3,14 +3,26 @@
 // Apache License (https://github.com/WindowsAzure/azure-mobile-services/blob/master/LICENSE.txt)
 // ----------------------------------------------------------------------------
 
+#if WINDOWS_PHONE
 using Microsoft.Phone.Controls;
+#else
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Linq;
+#if WINDOWS_PHONE
 using System.Windows.Navigation;
+#else
+using Windows.UI.Xaml.Navigation;
+using Windows.Web.Http.Filters;
+using Windows.Web.Http;
+#endif
 
 namespace Auth0.SDK
 {
@@ -33,7 +45,7 @@ namespace Auth0.SDK
     /// that is like the Windows Store WebAuthenticationBroker 
     /// APIs.
     /// </summary>
-    internal class AuthenticationBroker : IDisposable
+    internal partial class AuthenticationBroker : IDisposable
     {
         static char[] AmpersandChars = new char[] { '&' };
         static char[] EqualsChars = new char[] { '=' };
@@ -62,6 +74,7 @@ namespace Auth0.SDK
         private PhoneAuthenticationStatus responseStatus = PhoneAuthenticationStatus.UserCancel;
         private AutoResetEvent authenticateFinishedEvent = new AutoResetEvent(false);
         private LoginPage page;
+        private static HashSet<string> visitedHosts = new HashSet<string>();
 
         /// <summary>
         /// Instantiates a new <see cref="AuthenticationBroker"/>.
@@ -94,7 +107,7 @@ namespace Auth0.SDK
         {
             this.StartUri = startUrl;
             this.EndUri = endUrl;
-            PhoneApplicationFrame rootFrame = Application.Current.RootVisual as PhoneApplicationFrame;
+            var rootFrame = GetRootFrame();
 
             if (rootFrame == null)
             {
@@ -107,8 +120,11 @@ namespace Auth0.SDK
             rootFrame.Navigated += rootFrame_Navigated;
 
             // Navigate to the login page.
+#if WINDOWS_PHONE
             rootFrame.Navigate(this.LoginPageUri);
-
+#else
+            rootFrame.Navigate(typeof(LoginPage));
+#endif
             Task<Auth0User> task = Task<Auth0User>.Factory.StartNew(() =>
             {
                 authenticateFinishedEvent.WaitOne();
@@ -135,12 +151,14 @@ namespace Auth0.SDK
             return task;
         }
 
-        public async Task Logout()
+
+        /// <summary>
+        /// Invoked to track a Uri that was visited during the login.
+        /// </summary>
+        /// <param name="uri">Uri visited during the login</param>
+        internal void TrackUri(Uri uri)
         {
-            if (this.page != null)
-            {
-                await this.page.browserControl.ClearCookiesAsync();
-            }
+            visitedHosts.Add(uri.Host);
         }
 
         /// <summary>
@@ -150,7 +168,7 @@ namespace Auth0.SDK
         /// <param name="e"></param>
         private void rootFrame_Navigated(object sender, NavigationEventArgs e)
         {
-            PhoneApplicationFrame rootFrame = Application.Current.RootVisual as PhoneApplicationFrame;
+            var rootFrame = GetRootFrame();
             rootFrame.Navigated -= rootFrame_Navigated;
 
             LoginPage page = e.Content as LoginPage;

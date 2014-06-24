@@ -1,11 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client", "Auth0Client\Auth0Client.csproj", "{088072EA-5157-4C40-B41B-8BB7B7187FCA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client.Phone.Silverlight", "Auth0Client\Auth0Client.Phone.Silverlight.csproj", "{088072EA-5157-4C40-B41B-8BB7B7187FCA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp", "SampleApp\SampleApp.csproj", "{FD828637-A4E1-437D-A9F5-F17422373EDD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Phone.Silverlight", "SampleApp\SampleApp.Phone.Silverlight.csproj", "{FD828637-A4E1-437D-A9F5-F17422373EDD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client.Phone", "Auth0Client.Phone\Auth0Client.Phone.csproj", "{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Phone81", "SampleApp.Phone81\SampleApp.Phone81.csproj", "{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,6 +51,36 @@ Global
 		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|x86.ActiveCfg = Release|x86
 		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|x86.Build.0 = Release|x86
 		{FD828637-A4E1-437D-A9F5-F17422373EDD}.Release|x86.Deploy.0 = Release|x86
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Debug|ARM.ActiveCfg = Debug|ARM
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Debug|ARM.Build.0 = Debug|ARM
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Debug|x86.ActiveCfg = Debug|x86
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Debug|x86.Build.0 = Debug|x86
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Release|ARM.ActiveCfg = Release|ARM
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Release|ARM.Build.0 = Release|ARM
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Release|x86.ActiveCfg = Release|x86
+		{53D1F9D1-78FC-424A-9F3F-3B33C2FD1C8D}.Release|x86.Build.0 = Release|x86
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|ARM.ActiveCfg = Debug|ARM
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|ARM.Build.0 = Debug|ARM
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|ARM.Deploy.0 = Debug|ARM
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|x86.ActiveCfg = Debug|x86
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|x86.Build.0 = Debug|x86
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Debug|x86.Deploy.0 = Debug|x86
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|ARM.ActiveCfg = Release|ARM
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|ARM.Build.0 = Release|ARM
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|ARM.Deploy.0 = Release|ARM
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|x86.ActiveCfg = Release|x86
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|x86.Build.0 = Release|x86
+		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|x86.Deploy.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

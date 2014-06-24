@@ -1,25 +1,29 @@
-﻿// ----------------------------------------------------------------------------
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Apache License (https://github.com/WindowsAzure/azure-mobile-services/blob/master/LICENSE.txt)
-// ----------------------------------------------------------------------------
-
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Navigation;
-using Microsoft.Phone.Controls;
-using Microsoft.Phone.Shell;
+using Windows.Foundation;
+using Windows.Foundation.Collections;
+using Windows.Phone.UI.Input;
+using Windows.UI.Xaml;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Data;
+using Windows.UI.Xaml.Input;
+using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Navigation;
+
+// The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkID=390556
 
 namespace Auth0.SDK
 {
     /// <summary>
-    /// Third-party provider authentication control for the Windows Phone platform.
+    /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public partial class LoginPage : PhoneApplicationPage
+    public sealed partial class LoginPage : Page
     {
         private const string NoDetailsAvailableMessage = "No details available.";
         private string responseData = string.Empty;
@@ -42,12 +46,19 @@ namespace Auth0.SDK
         public LoginPage()
         {
             InitializeComponent();
-
-            BackKeyPress += LoginPage_BackKeyPress;
-            BrowserControl.Navigating += BrowserControl_Navigating;
+            BrowserControl.NavigationStarting += BrowserControl_NavigationStarting;
             BrowserControl.LoadCompleted += BrowserControl_LoadCompleted;
             BrowserControl.NavigationFailed += BrowserControl_NavigationFailed;
         }
+
+        public WebView BrowserControl 
+        { 
+            get
+            { 
+                return this.browserControl;
+            } 
+        }
+
 
         /// <summary>
         /// Handler for the browser control's load completed event.  We use this to detect when
@@ -66,13 +77,14 @@ namespace Auth0.SDK
         /// </summary>
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
+            HardwareButtons.BackPressed += LoginPage_BackKeyPress;
             base.OnNavigatedTo(e);
 
             // Make sure that there is an authentication operation in progress.
             // If not, we'll navigate back to the previous page.
             if (!Broker.AuthenticationInProgress)
             {
-                this.NavigationService.GoBack();
+                this.Frame.GoBack();
             }
 
             if (!authenticationStarted)
@@ -105,6 +117,8 @@ namespace Auth0.SDK
 
                 Broker.OnAuthenticationFinished(responseData, responseStatus, responseErrorDetail);
             }
+
+            HardwareButtons.BackPressed -= LoginPage_BackKeyPress;
         }
 
         /// <summary>
@@ -112,21 +126,23 @@ namespace Auth0.SDK
         /// away from this page are benign (such as going to the start screen) or actually meant
         /// to cancel the operation.
         /// </summary>
-        void LoginPage_BackKeyPress(object sender, System.ComponentModel.CancelEventArgs e)
+        private void LoginPage_BackKeyPress(object sender, BackPressedEventArgs e)
         {
-            ShowProgressBar();
-
             responseData = "";
             responseStatus = PhoneAuthenticationStatus.UserCancel;
 
             authenticationFinished = true;
+            
+            e.Handled = true;
+            NavigateBackWithProgress();
         }
+
 
         /// <summary>
         /// Handler for the browser control's navigating event.  We use this to detect when login
         /// has completed.
         /// </summary>
-        private void BrowserControl_Navigating(object sender, NavigatingEventArgs e)
+        private void BrowserControl_NavigationStarting(object sender, WebViewNavigationStartingEventArgs e)
         {
             if (EqualsWithoutQueryString(e.Uri, Broker.EndUri))
             {
@@ -138,8 +154,8 @@ namespace Auth0.SDK
                     if (match.Success)
                     {
                         responseErrorDetail = string.Format("Error: {0}. Description: {1}",
-                            HttpUtility.UrlDecode(match.Groups[1].Value),
-                            HttpUtility.UrlDecode(match.Groups[2].Value));
+                            WebUtility.UrlDecode(match.Groups[1].Value),
+                            WebUtility.UrlDecode(match.Groups[2].Value));
                     }
                 }
                 else
@@ -147,7 +163,7 @@ namespace Auth0.SDK
                     responseData = e.Uri.ToString();
                     responseStatus = PhoneAuthenticationStatus.Success;
                 }
-              
+
                 authenticationFinished = true;
 
                 // Navigate back now.
@@ -171,24 +187,13 @@ namespace Auth0.SDK
         /// <summary>
         /// Handler for the browser control's navigation failed event.  We use this to detect errors
         /// </summary>
-        private void BrowserControl_NavigationFailed(object sender, NavigationFailedEventArgs e)
+        private void BrowserControl_NavigationFailed(object sender, WebViewNavigationFailedEventArgs e)
         {
-            WebBrowserNavigationException navEx = e.Exception as WebBrowserNavigationException;
-
-            if (navEx != null)
-            {
-                // Pass along the provided error information.
-                responseErrorDetail = string.Format("Error code: {0}", navEx.StatusCode);
-            }
-            else
-            {
-                // No error information available.
-                responseErrorDetail = NoDetailsAvailableMessage;
-            }
+            // Pass along the provided error information.
+            responseErrorDetail = string.Format("Error: {0}", e.WebErrorStatus);
             responseStatus = PhoneAuthenticationStatus.ErrorHttp;
 
             authenticationFinished = true;
-            e.Handled = true;
 
             // Navigate back now.
             this.NavigateBackWithProgress();
@@ -200,7 +205,7 @@ namespace Auth0.SDK
         private void NavigateBackWithProgress()
         {
             ShowProgressBar();
-            NavigationService.GoBack();
+            this.Frame.GoBack();
         }
 
         /// <summary>
@@ -208,8 +213,8 @@ namespace Auth0.SDK
         /// </summary>
         private void ShowProgressBar()
         {
-            BrowserControl.Visibility = System.Windows.Visibility.Collapsed;
-            progress.Visibility = System.Windows.Visibility.Visible;
+            BrowserControl.Visibility = Visibility.Collapsed;
+            progress.Visibility = Visibility.Visible;
         }
 
         /// <summary>
@@ -217,8 +222,8 @@ namespace Auth0.SDK
         /// </summary>
         private void HideProgressBar()
         {
-            BrowserControl.Visibility = System.Windows.Visibility.Visible;
-            progress.Visibility = System.Windows.Visibility.Collapsed;
+            BrowserControl.Visibility = Visibility.Visible;
+            progress.Visibility = Visibility.Collapsed;
         }
     }
 }

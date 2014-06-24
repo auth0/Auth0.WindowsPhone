@@ -47,7 +47,7 @@ namespace SampleApp
             if (MessageBox.Show(
                 "Do you want a delegation token to call another API?", 
                 "Delegation Token", 
-                MessageBoxButton.OK) == MessageBoxResult.OK)
+                MessageBoxButton.OKCancel) == MessageBoxResult.OK)
             {
                 var targetClientId = "HmqDkk9qtDgxsiSKpLKzc51xD75hgiRW";
                 var options = new Dictionary<string, string>
