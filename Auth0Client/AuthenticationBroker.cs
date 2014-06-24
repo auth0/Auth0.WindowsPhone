@@ -81,7 +81,7 @@ namespace Auth0.SDK
         /// </summary>
         public AuthenticationBroker()
         {
-            this.LoginPageUri = new Uri("/Auth0Client;component/loginpage.xaml", UriKind.Relative);
+            this.LoginPageUri = new Uri("/Auth0Client.Phone.Silverlight;component/loginpage.xaml", UriKind.Relative);
         }
 
         /// <summary>
