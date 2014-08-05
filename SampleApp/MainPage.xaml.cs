@@ -55,7 +55,7 @@ namespace SampleApp
                     { "scope", "openid profile" }
                 };
 
-                var delegationResult = await auth0.GetDelegationToken(targetClientId, options);
+                var delegationResult = await auth0.GetDelegationToken(targetClientId: targetClientId, options: options);
 
                 MessageBox.Show(
                     string.Format("Your delegation token: {0}", delegationResult["id_token"]));

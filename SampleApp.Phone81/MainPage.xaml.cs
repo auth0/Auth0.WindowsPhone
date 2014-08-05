@@ -71,7 +71,7 @@ namespace SampleApp.Phone81
                     { "scope", "openid profile" }
                 };
 
-                var delegationResult = await auth0.GetDelegationToken(targetClientId, options);
+                var delegationResult = await auth0.GetDelegationToken(targetClientId: targetClientId, options: options);
 
                 await MessageHelpers.ShowDialogAsync(string.Format("Your delegation token: {0}", delegationResult["id_token"]));
             }

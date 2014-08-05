@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -149,48 +150,73 @@ namespace Auth0.SDK
         }
 
         /// <summary>
+        /// Renews the idToken (JWT)
+        /// </summary>
+        /// <returns>The refreshed token.</returns>
+        /// <remarks>The JWT must not have expired.</remarks>
+        public Task<JObject> RenewIdToken()
+        {
+            if (string.IsNullOrEmpty(this.CurrentUser.IdToken))
+            {
+                throw new InvalidOperationException("You need to login first.");
+            }
+
+            return this.GetDelegationToken(
+                api: "auth0", 
+                idToken: this.CurrentUser.IdToken, 
+                options: new Dictionary<string, string>
+                    {
+                        { "scope", "openid profile" }
+                    });
+        }
+
+        /// <summary>
         /// Get a delegation token
         /// </summary>
         /// <returns>Delegation token result.</returns>
-        /// <param name="targetClientId">Target client ID.</param>
-        /// <param name="options">Custom parameters.</param>
-        public async Task<JObject> GetDelegationToken(string targetClientId, IDictionary<string, string> options = null)
+        /// <param name="api">The type of the API to be used.</param>
+        /// <param name="idToken">The string representing the JWT. Useful only if not expired.</param>
+        /// <param name="refreshToken">The refresh token.</param>
+        /// <param name="targetClientId">The clientId of the target application for which to obtain a delegation token.</param>
+        /// <param name="options">Additional parameters.</param>
+        public async Task<JObject> GetDelegationToken(string api = "",
+            string idToken = "",
+            string refreshToken = "",
+            string targetClientId = "",
+            Dictionary<string, string> options = null)
         {
-            var id_token = string.Empty;
-            options = options ?? new Dictionary<string, string>();
-
-            // ensure id_token
-            if (options.ContainsKey("id_token"))
-            {
-                id_token = options["id_token"];
-                options.Remove("id_token");
-            }
-            else
-            {
-                id_token = this.CurrentUser.IdToken;
-            }
-
-            if (string.IsNullOrEmpty(id_token))
+            if (!(string.IsNullOrEmpty(idToken) || string.IsNullOrEmpty(refreshToken)))
             {
                 throw new InvalidOperationException(
-                        "You need to login first or specify a value for id_token parameter.");
+                    "You must provide either the idToken paramenter or the refreshToken parameter, not both.");
             }
+
+            if (string.IsNullOrEmpty(idToken) && string.IsNullOrEmpty(refreshToken))
+            {
+                if (this.CurrentUser == null || string.IsNullOrEmpty(this.CurrentUser.IdToken)){
+                    throw new InvalidOperationException(
+                    "You need to login first or specify a value for idToken or refreshToken parameter.");
+                }
+                
+                idToken = this.CurrentUser.IdToken;
+            }
+
+            options = options ?? new Dictionary<string, string>();
+            options["id_token"] = idToken;
+            options["api_type"] = api;
+            options["refresh_token"] = refreshToken;
+            options["target"] = targetClientId;
 
             var taskFactory = new TaskFactory();
 
             var endpoint = string.Format(DelegationEndpoint, this.domain);
             var parameters = String.Format(
-                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&id_token={0}&target={1}&client_id={2}",
-                id_token,
-                targetClientId,
+                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&client_id={0}",
                 this.clientId);
 
-            foreach (var option in options)
+            foreach (var option in options.Where(o => !string.IsNullOrEmpty(o.Value)))
             {
-                if (!string.IsNullOrEmpty(option.Value))
-                {
-                    parameters += string.Format("&{0}={1}", option.Key, option.Value);
-                }
+                parameters += string.Format("&{0}={1}", option.Key, option.Value);
             }
 
             byte[] postData = Encoding.UTF8.GetBytes(parameters);
