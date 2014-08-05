@@ -94,6 +94,15 @@
     <Compile Include="..\Auth0Client\AuthenticationErrorException.cs">
       <Link>AuthenticationErrorException.cs</Link>
     </Compile>
+    <Compile Include="..\Auth0Client\TokenValidator.cs">
+      <Link>TokenValidator.cs</Link>
+    </Compile>
+    <Compile Include="..\Auth0Client\Utils\Device.cs">
+      <Link>Utils\Device.cs</Link>
+    </Compile>
+    <Compile Include="..\Auth0Client\Utils\DictionaryExtensions.cs">
+      <Link>Utils\DictionaryExtensions.cs</Link>
+    </Compile>
     <Compile Include="AuthenticationBroker.Platform.cs" />
     <Compile Include="LoginPage.xaml.cs">
       <DependentUpon>LoginPage.xaml</DependentUpon>
@@ -101,18 +110,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\portable-net45+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Page Include="LoginPage.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\portable-net45+wp80+win8+wpa81\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>

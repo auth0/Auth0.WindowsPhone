@@ -10,6 +10,8 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using System.Globalization;
 
 namespace Auth0.SDK
 {
@@ -35,7 +37,7 @@ namespace Auth0.SDK
             this.domain = domain;
             this.clientId = clientId;
             this.broker = new AuthenticationBroker();
-        }
+            }
 
         public Auth0User CurrentUser { get; private set; }
 
@@ -53,12 +55,18 @@ namespace Auth0.SDK
         /// Login a user into an Auth0 application. Attempts to do a background login, but if unsuccessful shows an embedded browser window either showing the widget or skipping it by passing a connection name
         /// </summary>
         /// <param name="connection">Optional connection name to bypass the login widget</param>
+        /// <param name="withRefreshToken">true to include the refresh_token in the response, false (default) otherwise.
+        /// The refresh_token allows you to renew the id_token indefinitely (does not expire) unless specifically revoked.</param>
         /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
         /// <returns>Returns a Task of Auth0User</returns>
-        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
+        public async Task<Auth0User> LoginAsync(string connection = "", bool withRefreshToken = false, string scope = "openid")
         {
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            if (withRefreshToken && !scope.Contains("offline_access"))
+            {
+                scope += " offline_access";
+            }
 
+            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
             var endpoint = string.Format(UserInfoEndpoint, this.domain, user.Auth0AccessToken);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "GET";
@@ -85,10 +93,17 @@ namespace Auth0.SDK
         /// <returns>Task that will complete when the user has finished authentication.</returns>
         /// <param name="connection" type="string">The name of the connection to use in Auth0. Connection defines an Identity Provider.</param>
         /// <param name="userName" type="string">User name.</param>
-        /// <param name="password type="string"">User password.</param>
+        /// <param name="password" type="string">User password.</param>
+        /// <param name="withRefreshToken">true to include the refresh_token in the response, false otherwise.
+        /// The refresh_token allows you to renew the id_token indefinitely (does not expire) unless specifically revoked.</param>
         /// <param name="scope">Scope.</param>
-        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid")
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, bool withRefreshToken = false, string scope = "openid")
         {
+            if (withRefreshToken && !scope.Contains("offline_access"))
+            {
+                scope += " offline_access";
+            }
+
             var taskFactory = new TaskFactory();
 
             var endpoint = string.Format(ResourceOwnerEndpoint, this.domain);
@@ -153,21 +168,64 @@ namespace Auth0.SDK
         /// Renews the idToken (JWT)
         /// </summary>
         /// <returns>The refreshed token.</returns>
+        /// <param name="refreshToken">The refresh token</param>
+        /// <param name="options">Additional parameters.</param>
+        public async Task<JObject> RefreshToken(
+            string refreshToken = "", 
+            Dictionary<string, string> options = null)
+        {
+            var emptyToken = string.IsNullOrEmpty(refreshToken);
+            if (emptyToken && this.CurrentUser != null && string.IsNullOrEmpty(this.CurrentUser.RefreshToken))
+            {
+                throw new InvalidOperationException(
+                    "The current user's refresh_token could not be retrieved and no refresh_token was provided as parameter");
+            }
+
+            return await this.GetDelegationToken(
+                api: "app",
+                refreshToken: emptyToken ? this.CurrentUser.RefreshToken : this.CurrentUser.RefreshToken,
+                options: options);
+        }
+
+        /// <summary>
+        /// Verifies if the jwt for the current user has expired.
+        /// </summary>
+        /// <returns>true if the token has expired, false otherwise.</returns>
+        /// <remarks>Must be logged in before invoking.</remarks>
+        public bool HasTokenExpired()
+        {
+            if (string.IsNullOrEmpty(this.CurrentUser.IdToken))
+            {
+                throw new InvalidOperationException("You need to either login first.");
+            }
+
+            return TokenValidator.HasExpired(this.CurrentUser.IdToken);
+        }
+
+        /// <summary>
+        /// Renews the idToken (JWT)
+        /// </summary>
+        /// <returns>The refreshed token.</returns>
         /// <remarks>The JWT must not have expired.</remarks>
-        public Task<JObject> RenewIdToken()
+        /// <param name="options">Additional parameters.</param>
+        public Task<JObject> RenewIdToken(Dictionary<string, string> options = null)
         {
             if (string.IsNullOrEmpty(this.CurrentUser.IdToken))
             {
                 throw new InvalidOperationException("You need to login first.");
             }
 
+            options = options ?? new Dictionary<string, string>();
+
+            if (!options.ContainsKey("scope"))
+            {
+                options["scope"] = "passthrough";
+            }
+
             return this.GetDelegationToken(
-                api: "auth0", 
+                api: "app", 
                 idToken: this.CurrentUser.IdToken, 
-                options: new Dictionary<string, string>
-                    {
-                        { "scope", "openid profile" }
-                    });
+                options: options);
         }
 
         /// <summary>
@@ -188,7 +246,7 @@ namespace Auth0.SDK
             if (!(string.IsNullOrEmpty(idToken) || string.IsNullOrEmpty(refreshToken)))
             {
                 throw new InvalidOperationException(
-                    "You must provide either the idToken paramenter or the refreshToken parameter, not both.");
+                    "You must provide either the idToken parameter or the refreshToken parameter, not both.");
             }
 
             if (string.IsNullOrEmpty(idToken) && string.IsNullOrEmpty(refreshToken))
@@ -279,6 +337,12 @@ namespace Auth0.SDK
                 string.Format(AuthorizeUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl), connection) :
                 string.Format(LoginWidgetUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl));
 
+            if (scope.Contains("offline_access"))
+            {
+                var deviceId = Uri.EscapeDataString(Device.GetUniqueId());
+                authorizeUri += string.Format("&device={0}", deviceId);
+            }
+            
             this.State = new string(chars);
             var startUri = new Uri(authorizeUri + "&state=" + this.State);
 

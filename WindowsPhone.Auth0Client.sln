@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client.Phone", "Auth0C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Phone81", "SampleApp.Phone81\SampleApp.Phone81.csproj", "{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client.Phone.Tests", "Auth0Client.Phone.Tests\Auth0Client.Phone.Tests.csproj", "{5B22C995-02BE-4A8E-B73D-8866D4574082}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -81,6 +83,14 @@ Global
 		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|x86.ActiveCfg = Release|x86
 		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|x86.Build.0 = Release|x86
 		{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}.Release|x86.Deploy.0 = Release|x86
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Release|ARM.ActiveCfg = Release|Any CPU
+		{5B22C995-02BE-4A8E-B73D-8866D4574082}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

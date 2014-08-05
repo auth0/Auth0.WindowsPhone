@@ -64,7 +64,7 @@ namespace Auth0.SDK
         /// isn't currently in the middle of an authentication operation, then we immediately
         /// navigate back.
         /// </summary>
-        protected override void OnNavigatedTo(NavigationEventArgs e)
+        protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
 
