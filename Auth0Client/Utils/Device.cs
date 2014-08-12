@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 #if WINDOWS_PHONE
 using Microsoft.Phone.Info;
 #else
@@ -7,7 +8,7 @@ using Windows.Networking.Proximity;
 
 namespace Auth0.SDK
 {
-    public class Device
+    public class Device : IDeviceIdProvider
     {
         private static string id;
 
@@ -32,6 +33,11 @@ namespace Auth0.SDK
             }
 
             return id;
+        }
+
+        Task<string> IDeviceIdProvider.GetDeviceId()
+        {
+            return Task.FromResult<string>(GetUniqueId());
         }
     }
 }

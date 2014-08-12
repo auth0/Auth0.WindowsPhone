@@ -37,7 +37,8 @@ namespace Auth0.SDK
             this.domain = domain;
             this.clientId = clientId;
             this.broker = new AuthenticationBroker();
-            }
+            this.DeviceIdProvider = new Device();
+        }
 
         public Auth0User CurrentUser { get; private set; }
 
@@ -48,6 +49,11 @@ namespace Auth0.SDK
                 return string.Format(DefaultCallback, this.domain);
             }
         }
+
+        /// <summary>
+        /// The component used to generate the device's unique id
+        /// </summary>
+        public IDeviceIdProvider DeviceIdProvider { get; set; }
 
         internal string State { get; set; }
 
@@ -61,12 +67,9 @@ namespace Auth0.SDK
         /// <returns>Returns a Task of Auth0User</returns>
         public async Task<Auth0User> LoginAsync(string connection = "", bool withRefreshToken = false, string scope = "openid")
         {
-            if (withRefreshToken && !scope.Contains("offline_access"))
-            {
-                scope += " offline_access";
-            }
+            scope = IncreaseScopeWithOfflineAccess(withRefreshToken, scope);
 
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            var user = await this.broker.AuthenticateAsync(await GetStartUri(connection, scope), new Uri(this.CallbackUrl));
             var endpoint = string.Format(UserInfoEndpoint, this.domain, user.Auth0AccessToken);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
             request.Method = "GET";
@@ -87,6 +90,15 @@ namespace Auth0.SDK
             return this.CurrentUser;
         }
 
+        private static string IncreaseScopeWithOfflineAccess(bool withRefreshToken, string scope)
+        {
+            if (withRefreshToken && !scope.Contains("offline_access"))
+            {
+                scope += " offline_access";
+            }
+            return scope;
+        }
+
         /// <summary>
         ///  Log a user into an Auth0 application given an user name and password.
         /// </summary>
@@ -99,10 +111,7 @@ namespace Auth0.SDK
         /// <param name="scope">Scope.</param>
         public async Task<Auth0User> LoginAsync(string connection, string userName, string password, bool withRefreshToken = false, string scope = "openid")
         {
-            if (withRefreshToken && !scope.Contains("offline_access"))
-            {
-                scope += " offline_access";
-            }
+            scope = IncreaseScopeWithOfflineAccess(withRefreshToken, scope);
 
             var taskFactory = new TaskFactory();
 
@@ -183,7 +192,7 @@ namespace Auth0.SDK
 
             return await this.GetDelegationToken(
                 api: "app",
-                refreshToken: emptyToken ? this.CurrentUser.RefreshToken : this.CurrentUser.RefreshToken,
+                refreshToken: emptyToken ? this.CurrentUser.RefreshToken : refreshToken,
                 options: options);
         }
 
@@ -323,7 +332,7 @@ namespace Auth0.SDK
             await this.broker.Logout();
         }
 
-        private Uri GetStartUri(string connection, string scope)
+        private async Task<Uri> GetStartUri(string connection, string scope)
         {
             // Generate state to include in startUri
             var chars = new char[16];
@@ -339,7 +348,7 @@ namespace Auth0.SDK
 
             if (scope.Contains("offline_access"))
             {
-                var deviceId = Uri.EscapeDataString(Device.GetUniqueId());
+                var deviceId = Uri.EscapeDataString(await this.DeviceIdProvider.GetDeviceId());
                 authorizeUri += string.Format("&device={0}", deviceId);
             }
             

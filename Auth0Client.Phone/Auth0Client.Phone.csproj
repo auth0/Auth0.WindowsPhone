@@ -103,6 +103,9 @@
     <Compile Include="..\Auth0Client\Utils\DictionaryExtensions.cs">
       <Link>Utils\DictionaryExtensions.cs</Link>
     </Compile>
+    <Compile Include="..\Auth0Client\Utils\IDeviceIdProvider.cs">
+      <Link>Utils\IDeviceIdProvider.cs</Link>
+    </Compile>
     <Compile Include="AuthenticationBroker.Platform.cs" />
     <Compile Include="LoginPage.xaml.cs">
       <DependentUpon>LoginPage.xaml</DependentUpon>
