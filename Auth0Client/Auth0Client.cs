@@ -205,7 +205,7 @@ namespace Auth0.SDK
         {
             if (string.IsNullOrEmpty(this.CurrentUser.IdToken))
             {
-                throw new InvalidOperationException("You need to either login first.");
+                throw new InvalidOperationException("You need to login first.");
             }
 
             return TokenValidator.HasExpired(this.CurrentUser.IdToken);
@@ -312,6 +312,19 @@ namespace Auth0.SDK
                     {
                         var text = await streamReader.ReadToEndAsync();
                         delegationResult = JObject.Parse(text);
+
+                        JToken temp = null;
+
+                        if (delegationResult.TryGetValue("id_token", out temp))
+                        {
+                            var jwt = temp.Value<string>();
+
+                            this.CurrentUser = this.CurrentUser
+                                ?? new Auth0User() { RefreshToken = refreshToken };
+                            this.CurrentUser.IdToken = jwt;
+                        }
+
+                        return delegationResult;
                     }
                 }
             }
@@ -319,8 +332,6 @@ namespace Auth0.SDK
             {
                 throw;
             }
-
-            return delegationResult;
         }
 
         /// <summary>
