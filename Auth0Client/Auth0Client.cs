@@ -184,7 +184,9 @@ namespace Auth0.SDK
             Dictionary<string, string> options = null)
         {
             var emptyToken = string.IsNullOrEmpty(refreshToken);
-            if (emptyToken && this.CurrentUser != null && string.IsNullOrEmpty(this.CurrentUser.RefreshToken))
+            if (emptyToken 
+				&& (this.CurrentUser == null 
+					|| string.IsNullOrEmpty(this.CurrentUser.RefreshToken)))
             {
                 throw new InvalidOperationException(
                     "The current user's refresh_token could not be retrieved and no refresh_token was provided as parameter");
