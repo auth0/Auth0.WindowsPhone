@@ -36,6 +36,8 @@ namespace Auth0.SDK
         /// </summary>
         internal AuthenticationBroker Broker { get; set; }
 
+        private object monitor = new object();
+
         /// <summary>
         /// Initiatlizes the page by hooking up some event handlers.
         /// </summary>
@@ -47,6 +49,14 @@ namespace Auth0.SDK
             BrowserControl.Navigating += BrowserControl_Navigating;
             BrowserControl.LoadCompleted += BrowserControl_LoadCompleted;
             BrowserControl.NavigationFailed += BrowserControl_NavigationFailed;
+        }
+
+        private void UnhookEvents()
+        {
+            BackKeyPress -= LoginPage_BackKeyPress;
+            BrowserControl.Navigating -= BrowserControl_Navigating;
+            BrowserControl.LoadCompleted -= BrowserControl_LoadCompleted;
+            BrowserControl.NavigationFailed -= BrowserControl_NavigationFailed;
         }
 
         /// <summary>
@@ -114,6 +124,8 @@ namespace Auth0.SDK
         /// </summary>
         void LoginPage_BackKeyPress(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            UnhookEvents();
+
             ShowProgressBar();
 
             responseData = "";
@@ -147,8 +159,10 @@ namespace Auth0.SDK
                     responseData = e.Uri.ToString();
                     responseStatus = PhoneAuthenticationStatus.Success;
                 }
-              
+
                 authenticationFinished = true;
+
+                UnhookEvents();
 
                 // Navigate back now.
                 this.NavigateBackWithProgress();
@@ -173,6 +187,8 @@ namespace Auth0.SDK
         /// </summary>
         private void BrowserControl_NavigationFailed(object sender, NavigationFailedEventArgs e)
         {
+            UnhookEvents();
+
             WebBrowserNavigationException navEx = e.Exception as WebBrowserNavigationException;
 
             if (navEx != null)

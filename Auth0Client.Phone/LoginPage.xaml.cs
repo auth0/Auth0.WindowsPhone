@@ -51,6 +51,13 @@ namespace Auth0.SDK
             BrowserControl.NavigationFailed += BrowserControl_NavigationFailed;
         }
 
+        private void UnhookEvents()
+        {
+            BrowserControl.NavigationStarting -= BrowserControl_NavigationStarting;
+            BrowserControl.LoadCompleted -= BrowserControl_LoadCompleted;
+            BrowserControl.NavigationFailed -= BrowserControl_NavigationFailed;
+        }
+
         public WebView BrowserControl 
         { 
             get
@@ -128,6 +135,7 @@ namespace Auth0.SDK
         /// </summary>
         private void LoginPage_BackKeyPress(object sender, BackPressedEventArgs e)
         {
+            UnhookEvents();
             responseData = "";
             responseStatus = PhoneAuthenticationStatus.UserCancel;
 
@@ -166,6 +174,8 @@ namespace Auth0.SDK
 
                 authenticationFinished = true;
 
+                UnhookEvents();
+
                 // Navigate back now.
                 this.NavigateBackWithProgress();
             }
@@ -189,6 +199,8 @@ namespace Auth0.SDK
         /// </summary>
         private void BrowserControl_NavigationFailed(object sender, WebViewNavigationFailedEventArgs e)
         {
+            UnhookEvents();
+
             // Pass along the provided error information.
             responseErrorDetail = string.Format("Error: {0}", e.WebErrorStatus);
             responseStatus = PhoneAuthenticationStatus.ErrorHttp;
