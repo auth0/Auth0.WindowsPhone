@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -54,9 +55,10 @@ namespace Auth0.SDK
         /// <param name="connection">Optional connection name to bypass the login widget</param>
         /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
         /// <returns>Returns a Task of Auth0User</returns>
-        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid")
+        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid", IDictionary<string, string> options = null)
         {
-            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope), new Uri(this.CallbackUrl));
+            options = options ?? new Dictionary<string, string>();
+            var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope, options), new Uri(this.CallbackUrl));
 
             var endpoint = string.Format(UserInfoEndpoint, this.domain, user.Auth0AccessToken);
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
@@ -239,7 +241,7 @@ namespace Auth0.SDK
             await this.broker.Logout();
         }
 
-        private Uri GetStartUri(string connection, string scope)
+        private Uri GetStartUri(string connection, string scope, IDictionary<string, string> options)
         {
             // Generate state to include in startUri
             var chars = new char[16];
@@ -253,8 +255,12 @@ namespace Auth0.SDK
                 string.Format(AuthorizeUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl), connection) :
                 string.Format(LoginWidgetUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl));
 
+            authorizeUri += string.Format("&state={0}", this.State);
+
+            authorizeUri += string.Join("", options.Select(kvp => string.Format("&{0}={1}", kvp.Key, kvp.Value)));
+
             this.State = new string(chars);
-            var startUri = new Uri(authorizeUri + "&state=" + this.State);
+            var startUri = new Uri(authorizeUri);
 
             return startUri;
         }
