@@ -94,6 +94,9 @@
     <Compile Include="..\Auth0Client\AuthenticationErrorException.cs">
       <Link>AuthenticationErrorException.cs</Link>
     </Compile>
+    <Compile Include="..\Auth0Client\Utils.cs">
+      <Link>Utils.cs</Link>
+    </Compile>
     <Compile Include="AuthenticationBroker.Platform.cs" />
     <Compile Include="LoginPage.xaml.cs">
       <DependentUpon>LoginPage.xaml</DependentUpon>

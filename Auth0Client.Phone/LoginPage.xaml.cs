@@ -23,7 +23,7 @@ namespace Auth0.SDK
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class LoginPage : Page
+    internal sealed partial class LoginPage : Page
     {
         private const string NoDetailsAvailableMessage = "No details available.";
         private string responseData = string.Empty;
