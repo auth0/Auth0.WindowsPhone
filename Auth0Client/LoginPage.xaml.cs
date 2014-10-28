@@ -19,7 +19,7 @@ namespace Auth0.SDK
     /// <summary>
     /// Third-party provider authentication control for the Windows Phone platform.
     /// </summary>
-    public partial class LoginPage : PhoneApplicationPage
+    internal sealed partial class LoginPage : PhoneApplicationPage
     {
         private const string NoDetailsAvailableMessage = "No details available.";
         private string responseData = string.Empty;

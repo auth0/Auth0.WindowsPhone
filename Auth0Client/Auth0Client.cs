@@ -24,6 +24,7 @@ namespace Auth0.SDK
         private const string DelegationEndpoint = "https://{0}/delegation";
         private const string UserInfoEndpoint = "https://{0}/userinfo?access_token={1}";
         private const string DefaultCallback = "https://{0}/mobile";
+        private const string DefaultScope = "openid";
 
         private readonly string domain;
         private readonly string clientId;
@@ -55,27 +56,22 @@ namespace Auth0.SDK
         /// <param name="connection">Optional connection name to bypass the login widget</param>
         /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
         /// <returns>Returns a Task of Auth0User</returns>
-        public async Task<Auth0User> LoginAsync(string connection = "", string scope = "openid", IDictionary<string, string> options = null)
+        public async Task<Auth0User> LoginAsync(string connection = "", string scope = DefaultScope, IDictionary<string, string> options = null)
         {
             options = options ?? new Dictionary<string, string>();
             var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope, options), new Uri(this.CallbackUrl));
 
-            var endpoint = string.Format(UserInfoEndpoint, this.domain, user.Auth0AccessToken);
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
-            request.Method = "GET";
 
-            TaskFactory taskFactory = new TaskFactory();
-            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
-            using (Stream responseStream = response.GetResponseStream())
+            if (!string.IsNullOrEmpty(scope) && scope != DefaultScope)
             {
-                using (StreamReader streamReader = new StreamReader(responseStream))
-                {
-                    var text = streamReader.ReadToEnd();
-                    user.Profile = JObject.Parse(text);
-
-                    this.CurrentUser = user;
-                }
+                user.Profile = this.GetUserProfileFromIdToken(user.IdToken);
             }
+            else
+            {
+                user.Profile = await this.GetUserProfileFromUserInfo(user.Auth0AccessToken);
+            }
+
+            this.CurrentUser = user;
 
             return this.CurrentUser;
         }
@@ -88,7 +84,7 @@ namespace Auth0.SDK
         /// <param name="userName" type="string">User name.</param>
         /// <param name="password type="string"">User password.</param>
         /// <param name="scope">Scope.</param>
-        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = "openid")
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = DefaultScope)
         {
             var taskFactory = new TaskFactory();
 
@@ -125,6 +121,7 @@ namespace Auth0.SDK
                     using (StreamReader streamReader = new StreamReader(responseStream))
                     {
                         var text = await streamReader.ReadToEndAsync();
+
                         var data = JObject.Parse(text).ToObject<Dictionary<string, string>>();
 
                         if (data.ContainsKey("error"))
@@ -134,6 +131,15 @@ namespace Auth0.SDK
                         else if (data.ContainsKey("access_token"))
                         {
                             this.CurrentUser = new Auth0User(data);
+
+                            if (!string.IsNullOrEmpty(scope) && scope != DefaultScope)
+                            {
+                                this.CurrentUser.Profile = this.GetUserProfileFromIdToken(this.CurrentUser.IdToken);
+                            }
+                            else
+                            {
+                                this.CurrentUser.Profile = await this.GetUserProfileFromUserInfo(this.CurrentUser.Auth0AccessToken);
+                            }
                         }
                         else
                         {
@@ -148,6 +154,12 @@ namespace Auth0.SDK
             }
 
             return this.CurrentUser;
+        }
+
+        private JObject GetUserProfileFromIdToken(string idToken)
+        {
+            var temp = Utils.Base64UrlDecode(idToken.Split('.')[1]);
+            return JObject.Parse(Encoding.UTF8.GetString(temp, 0, temp.Length));
         }
 
         /// <summary>
@@ -239,6 +251,24 @@ namespace Auth0.SDK
         {
             this.CurrentUser = null;
             await this.broker.Logout();
+        }
+
+        private async Task<JObject> GetUserProfileFromUserInfo(string accessToken)
+        {
+            var endpoint = string.Format(UserInfoEndpoint, this.domain, accessToken);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(endpoint);
+            request.Method = "GET";
+
+            TaskFactory taskFactory = new TaskFactory();
+            var response = await taskFactory.FromAsync<WebResponse>(request.BeginGetResponse, request.EndGetResponse, null);
+            using (Stream responseStream = response.GetResponseStream())
+            {
+                using (StreamReader streamReader = new StreamReader(responseStream))
+                {
+                    var text = streamReader.ReadToEnd();
+                    return JObject.Parse(text);
+                }
+            }
         }
 
         private Uri GetStartUri(string connection, string scope, IDictionary<string, string> options)
