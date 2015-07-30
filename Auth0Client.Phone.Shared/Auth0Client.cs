@@ -250,7 +250,7 @@ namespace Auth0.SDK
         public virtual async Task LogoutAsync()
         {
             this.CurrentUser = null;
-            await this.broker.Logout();
+            await this.broker.LogoutAsync();
         }
 
         private async Task<JObject> GetUserProfileFromUserInfo(string accessToken)
