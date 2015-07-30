@@ -57,7 +57,7 @@
         <Grid x:Name="ContentPanel" Grid.Row="1" Margin="12,0,12,0">
 
         </Grid>
-        <Button Content="Login" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="188,24,0,0" Grid.Row="1" Click="Button_Click"/>
+        <Button Content="Login" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="188,24,0,0" Grid.Row="1" Click="Login_Click"/>
         <Button Content="Logout" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="181,96,0,0" Grid.Row="1" Click="Logout_Click"/>
 
         <!--Uncomment to see an alignment grid to help ensure your controls are

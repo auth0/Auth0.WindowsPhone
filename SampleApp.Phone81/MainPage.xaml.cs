@@ -35,7 +35,7 @@ namespace SampleApp.Phone81
                 "contoso.auth0.com",
                 "cEPMBtnqXQdFBuUyJeAugh6W7kLIoepB");
 
-        private async void Button_Click(object sender, RoutedEventArgs e)
+        private async void Login_Click(object sender, RoutedEventArgs e)
         {
             try
             {

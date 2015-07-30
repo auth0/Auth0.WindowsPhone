@@ -26,7 +26,7 @@
             </TextBlock>
         </StackPanel>
     <StackPanel Grid.Row="1"  HorizontalAlignment="Center">
-            <Button Content="Login"  Click="Button_Click"></Button>
+            <Button Content="Login"  Click="Login_Click"></Button>
             <Button Content="Log out"  Click="Logout_Click"></Button>
         </StackPanel>
     </Grid>

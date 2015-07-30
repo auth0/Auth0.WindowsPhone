@@ -79,24 +79,6 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\Auth0Client\Auth0Client.cs">
-      <Link>Auth0Client.cs</Link>
-    </Compile>
-    <Compile Include="..\Auth0Client\Auth0User.cs">
-      <Link>Auth0User.cs</Link>
-    </Compile>
-    <Compile Include="..\Auth0Client\AuthenticationBroker.cs">
-      <Link>AuthenticationBroker.cs</Link>
-    </Compile>
-    <Compile Include="..\Auth0Client\AuthenticationCancelException.cs">
-      <Link>AuthenticationCancelException.cs</Link>
-    </Compile>
-    <Compile Include="..\Auth0Client\AuthenticationErrorException.cs">
-      <Link>AuthenticationErrorException.cs</Link>
-    </Compile>
-    <Compile Include="..\Auth0Client\Utils.cs">
-      <Link>Utils.cs</Link>
-    </Compile>
     <Compile Include="AuthenticationBroker.Platform.cs" />
     <Compile Include="LoginPage.xaml.cs">
       <DependentUpon>LoginPage.xaml</DependentUpon>
@@ -117,6 +99,7 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
+  <Import Project="..\Auth0Client.Phone.Shared\Auth0Client.Phone.Shared.projitems" Label="Shared" />
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '12.0' ">
     <VisualStudioVersion>12.0</VisualStudioVersion>
   </PropertyGroup>
