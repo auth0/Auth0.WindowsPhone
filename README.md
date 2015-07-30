@@ -6,10 +6,10 @@
   Install-Package Auth0.WindowsPhone
   ~~~
 
-2. Instantiate Auth0Client
+2. Instantiate Auth0Client and save into static property in App class
 
   ~~~cs
-  var auth0 = new Auth0Client(
+  Auth0 = new Auth0Client(
      "{YOUR_AUTH0_DOMAIN}",  // e.g. contoso.auth0.com
      "{YOUR_CLIENT_ID}");    // it's in Auth0 app settings
   ~~~
@@ -17,15 +17,28 @@
 3. Trigger login (with Widget) 
 
   ~~~cs
-  auth0.LoginAsync().ContinueWith(t =>
+  try
   {
-  /* Use t.Result to do wonderful things, e.g.: 
-    - get user email => t.Result.Profile["email"].ToString()
-    - get facebook/google/twitter/etc access token => t.Result.Profile["identities"][0]["access_token"]
-    - get Windows Azure AD groups => t.Result.Profile["groups"]
-    - etc.
-  */
-  });
+      var user = await App.Auth0.LoginAsync();
+      /* Use user.Profile to do wonderful things, e.g.: 
+      - get user email => user.Profile["email"].ToString()
+      - get facebook/google/twitter/etc access token => user.Profile["identities"][0]["access_token"]
+      - get Windows Azure AD groups => user.Profile["groups"]
+      - etc.
+      */
+  }
+  catch (AuthenticationCancelException)
+  {
+      // Handle case when user canceled authentication
+  }
+  catch (AuthenticationErrorException)
+  {
+      // Handle case when some error happen while authentication
+  }
+  catch (AuthenticationException)
+  {
+      // Handle all Auth0 Authentication error cases
+  }
   ~~~
 
   ![](http://puu.sh/4nZ1J.png)
@@ -33,13 +46,13 @@
 Or you can use the connection as a parameter (e.g. here we login with a Windows Azure AD account):
 
 ~~~cs
-auth0.LoginAsync("auth0waadtests.onmicrosoft.com").ContinueWith(t => .. );
+var user = await App.Auth0.LoginAsync("auth0waadtests.onmicrosoft.com");
 ~~~
 
 Or a database connection:
 
 ~~~cs
-auth0.LoginAsync("my-db-connection", "username", "password").ContinueWith(t => .. );
+var user = await App.Auth0.LoginAsync("my-db-connection", "username", "password");
 ~~~
 
 > Note: if the user pressed the back button `LoginAsync` throws a `AuthenticationCancelException`. If consent was not given (on social providers) or some other error happened it will throw a `AuthenticationErrorException`.
