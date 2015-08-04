@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30501.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client.Phone.Silverlight", "Auth0Client\Auth0Client.Phone.Silverlight.csproj", "{088072EA-5157-4C40-B41B-8BB7B7187FCA}"
 EndProject
@@ -11,7 +11,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Auth0Client.Phone", "Auth0C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleApp.Phone81", "SampleApp.Phone81\SampleApp.Phone81.csproj", "{F3777D16-8A8E-48F7-9BD6-8017EC4A7DCB}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Auth0Client.Phone.Shared", "Auth0Client.Phone.Shared\Auth0Client.Phone.Shared.shproj", "{73BC5D17-03B8-4E99-BEEA-A284FBFBC27E}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Auth0Client.Phone.Shared\Auth0Client.Phone.Shared.projitems*{73bc5d17-03b8-4e99-beea-a284fbfbc27e}*SharedItemsImports = 13
+		Auth0Client.Phone.Shared\Auth0Client.Phone.Shared.projitems*{088072ea-5157-4c40-b41b-8bb7b7187fca}*SharedItemsImports = 4
+		Auth0Client.Phone.Shared\Auth0Client.Phone.Shared.projitems*{53d1f9d1-78fc-424a-9f3f-3b33c2fd1c8d}*SharedItemsImports = 4
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
@@ -84,5 +91,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(CodealikeProperties) = postSolution
+		SolutionGuid = 16b2e289-6074-4d1e-8a5e-eea05038e0b5
 	EndGlobalSection
 EndGlobal

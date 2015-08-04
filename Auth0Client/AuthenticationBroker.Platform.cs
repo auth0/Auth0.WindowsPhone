@@ -6,7 +6,7 @@ namespace Auth0.SDK
 {
     internal partial class AuthenticationBroker
     {
-        public async Task Logout()
+        public async Task LogoutAsync()
         {
             if (this.page != null)
             {

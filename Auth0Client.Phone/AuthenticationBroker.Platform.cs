@@ -10,16 +10,22 @@ namespace Auth0.SDK
 {
     internal partial class AuthenticationBroker
     {
-        public async Task Logout()
+        public Task LogoutAsync()
         {
-            var cookieManager = new HttpBaseProtocolFilter().CookieManager;
-
-            foreach (HttpCookie cookie in visitedHosts
-                .SelectMany(host => cookieManager.GetCookies(
-                    new Uri(string.Format("http://{0}/", host)))))
+            return Task.Run(() =>
             {
-                cookieManager.DeleteCookie(cookie);
-            }
+                using (var httpBaseProtocolFilter = new HttpBaseProtocolFilter())
+                {
+                    var cookieManager = httpBaseProtocolFilter.CookieManager;
+
+                    foreach (HttpCookie cookie in visitedHosts
+                        .SelectMany(host => cookieManager.GetCookies(
+                            new Uri(string.Format("http://{0}/", host)))))
+                    {
+                        cookieManager.DeleteCookie(cookie);
+                    }
+                }
+            });
         }
 
         private static Frame GetRootFrame()
