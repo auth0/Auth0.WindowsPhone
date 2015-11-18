@@ -65,7 +65,7 @@ You can obtain a delegation token specifying the ID of the target client (`targe
 var targetClientId = "{TARGET_CLIENT_ID}";
 var options = new Dictionary<string, string>
 {
-    { "scope", "openid profile" },		// default: openid
+    { "scope", "openid name email" },		// default: openid // Details: https://auth0.com/docs/scopes
     { "id_token", "USER_ID_TOKEN" }		// default: id_token of the authenticated user (auth0.CurrentUser.IdToken)
 };
 

@@ -68,7 +68,7 @@ namespace SampleApp.Phone81
                 var targetClientId = "HmqDkk9qtDgxsiSKpLKzc51xD75hgiRW";
                 var options = new Dictionary<string, string>
                 {
-                    { "scope", "openid profile" }
+                    { "scope", "openid name email" }
                 };
 
                 var delegationResult = await auth0.GetDelegationToken(targetClientId, options);
