@@ -62,11 +62,11 @@ namespace Auth0.SDK
             var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope, options), new Uri(this.CallbackUrl));
 
 
-            if (!string.IsNullOrEmpty(scope) && scope != DefaultScope)
+            if (!string.IsNullOrEmpty(user.IdToken))
             {
                 user.Profile = this.GetUserProfileFromIdToken(user.IdToken);
             }
-            else
+            else if (!String.IsNullOrEmpty(user.Auth0AccessToken))
             {
                 user.Profile = await this.GetUserProfileFromUserInfo(user.Auth0AccessToken);
             }
@@ -281,9 +281,8 @@ namespace Auth0.SDK
                 chars[i] = (char)rand.Next((int)'a', (int)'z' + 1);
             }
 
-            var authorizeUri = !string.IsNullOrWhiteSpace(connection) ?
-                string.Format(AuthorizeUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl), connection) :
-                string.Format(LoginWidgetUrl, domain, clientId, Uri.EscapeDataString(scope), Uri.EscapeDataString(this.CallbackUrl));
+            var authorizeUri = string.Format(AuthorizeUrl, domain, clientId, Uri.EscapeDataString(scope),
+                Uri.EscapeDataString(this.CallbackUrl), connection);
 
             authorizeUri += string.Format("&state={0}", this.State);
 
