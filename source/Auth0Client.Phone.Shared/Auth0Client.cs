@@ -190,12 +190,44 @@ namespace Auth0.SDK
                         "You need to login first or specify a value for id_token parameter.");
             }
 
+            return await this.GetDelegationTokenCore(targetClientId, "id_token", id_token, options);
+        }
+
+        public async Task<JObject> GetRefreshedToken(IDictionary<string, string> options = null)
+        {
+            var refresh_token = string.Empty;
+            options = options ?? new Dictionary<string, string>();
+
+            // ensure refresh_token
+            if (options.ContainsKey("refresh_token"))
+            {
+                refresh_token = options["refresh_token"];
+                options.Remove("refresh_token");
+            }
+            else
+            {
+                refresh_token = this.CurrentUser.RefreshToken;
+            }
+
+            if (string.IsNullOrEmpty(refresh_token))
+            {
+                throw new InvalidOperationException(
+                        "You need to login with offline_access scope or specify a value for refresh_token parameter.");
+            }
+
+            return await this.GetDelegationTokenCore(this.clientId, "refresh_token", refresh_token, options);
+        }
+
+
+        private async Task<JObject> GetDelegationTokenCore(string targetClientId, string tokenType, string token, IDictionary<string, string> options = null)
+        {
             var taskFactory = new TaskFactory();
 
             var endpoint = string.Format(DelegationEndpoint, this.domain);
             var parameters = String.Format(
-                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&id_token={0}&target={1}&client_id={2}",
-                id_token,
+                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&{0}={1}&target={2}&client_id={3}",
+                tokenType,
+                token,
                 targetClientId,
                 this.clientId);
 
