@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Popups;
@@ -32,14 +33,14 @@ namespace SampleApp.Phone81
         }
 
         private Auth0Client auth0 = new Auth0Client(
-                "{DOMAIN}",
-                "{CLIENT_ID}");
+                "nico-sabena.auth0.com",
+                "YMVleEcCl7f0lOvlKCR7BHp4esvXeStG");
 
         private async void Login_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                await auth0.LoginAsync();
+                await auth0.LoginAsync(withRefreshToken: true);
                 //var user = await auth0.LoginAsync("google-oauth2");
                 //var user = await auth0.LoginAsync("sql-azure-database", "foo@dasd.com", "bar");
             }
@@ -62,7 +63,7 @@ namespace SampleApp.Phone81
             var command = await MessageHelpers.ShowOKCancelAsync(
                 "Do you want a delegation token to call another API?",
                 "Delegation Token");
-
+            var token = await GetValidIdToken();
             if (command.Label == "OK")
             {
                 var targetClientId = "HmqDkk9qtDgxsiSKpLKzc51xD75hgiRW";
@@ -81,6 +82,24 @@ namespace SampleApp.Phone81
         {
             await auth0.LogoutAsync();
             await MessageHelpers.ShowDialogAsync("Logout successful!");
+        }
+
+        /// <summary>
+        /// Shows usage of the refresh token. Returns the current id token
+        /// </summary>
+        /// <returns></returns>
+        private async Task<string> GetValidIdToken()
+        {
+            var idToken = auth0.CurrentUser.IdToken;
+            if (TokenValidator.HasExpired(idToken))
+            {
+                // refresh it
+                var result = await auth0.RefreshToken();
+                idToken = (string)result["id_token"];
+                auth0.CurrentUser.IdToken = idToken;
+            }
+
+            return idToken;
         }
     }
 }
