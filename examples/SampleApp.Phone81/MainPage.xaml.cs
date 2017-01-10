@@ -33,8 +33,8 @@ namespace SampleApp.Phone81
         }
 
         private Auth0Client auth0 = new Auth0Client(
-                "nico-sabena.auth0.com",
-                "YMVleEcCl7f0lOvlKCR7BHp4esvXeStG");
+                "{DOMAIN}",
+                "{CLIENT_ID}");
 
         private async void Login_Click(object sender, RoutedEventArgs e)
         {
