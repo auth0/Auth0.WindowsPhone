@@ -16,6 +16,8 @@ namespace Auth0.SDK
             this.Profile = accountProperties.ContainsKey("profile") ? accountProperties["profile"].ToJson() : null;
 
             this.State = accountProperties.ContainsKey("state") ? accountProperties["state"] : null;
+
+            this.RefreshToken = accountProperties.ContainsKey("refresh_token") ? accountProperties["refresh_token"] : null;
         }
 
         public string Auth0AccessToken { get; set; }
@@ -25,6 +27,8 @@ namespace Auth0.SDK
         public JObject Profile { get; set; }
 
         public string State { get; set; }
+
+        public string RefreshToken { get; set; }
     }
 
     internal static class Extensions
