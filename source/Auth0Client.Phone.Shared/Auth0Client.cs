@@ -56,8 +56,9 @@ namespace Auth0.SDK
         /// <param name="connection">Optional connection name to bypass the login widget</param>
         /// <param name="scope">Optional scope, either 'openid' or 'openid profile'</param>
         /// <returns>Returns a Task of Auth0User</returns>
-        public async Task<Auth0User> LoginAsync(string connection = "", string scope = DefaultScope, IDictionary<string, string> options = null)
+        public async Task<Auth0User> LoginAsync(string connection = "", string scope = DefaultScope, IDictionary<string, string> options = null, bool withRefreshToken = false)
         {
+            scope = IncreaseScopeWithOfflineAccess(withRefreshToken, scope);
             options = options ?? new Dictionary<string, string>();
             var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope, options), new Uri(this.CallbackUrl));
 
@@ -84,9 +85,11 @@ namespace Auth0.SDK
         /// <param name="userName" type="string">User name.</param>
         /// <param name="password type="string"">User password.</param>
         /// <param name="scope">Scope.</param>
-        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = DefaultScope)
+        public async Task<Auth0User> LoginAsync(string connection, string userName, string password, string scope = DefaultScope, bool withRefreshToken = false)
         {
             var taskFactory = new TaskFactory();
+
+            scope = IncreaseScopeWithOfflineAccess(withRefreshToken, scope);
 
             var endpoint = string.Format(ResourceOwnerEndpoint, this.domain);
             var parameters = String.Format(
@@ -156,6 +159,15 @@ namespace Auth0.SDK
             return this.CurrentUser;
         }
 
+        private static string IncreaseScopeWithOfflineAccess(bool withRefreshToken, string scope)
+        {
+            if (withRefreshToken && !scope.Contains("offline_access"))
+            {
+                scope = (scope ?? string.Empty) + " offline_access";
+            }
+            return scope;
+        }
+
         private JObject GetUserProfileFromIdToken(string idToken)
         {
             var temp = Utils.Base64UrlDecode(idToken.Split('.')[1]);
@@ -190,12 +202,51 @@ namespace Auth0.SDK
                         "You need to login first or specify a value for id_token parameter.");
             }
 
+            return await this.GetDelegationTokenCore(targetClientId, "id_token", id_token, options);
+        }
+
+        /// <summary>
+        /// Gets a refreshed token using either the provided refresh token or the one
+        /// obtained during login from the current user.
+        /// </summary>
+        /// <param name="refreshToken">A refresh token.</param>
+        /// <param name="options">Other options to include in the request.</param>
+        /// <returns>A <see cref="JObject"/> with the new token.</returns>
+        public async Task<JObject> RefreshToken(string refreshToken = null, IDictionary<string, string> options = null)
+        {
+            options = options ?? new Dictionary<string, string>();
+
+            // ensure refresh_token
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                if (options.ContainsKey("refresh_token"))
+                {
+                    refreshToken = options["refresh_token"];
+                    options.Remove("refresh_token");
+                }
+                else
+                {
+                    refreshToken = this.CurrentUser?.RefreshToken;
+                }
+            }
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                throw new InvalidOperationException(
+                        "You need to login with offline_access scope or specify a value for the refreshToken parameter.");
+            }
+
+            return await this.GetDelegationTokenCore(this.clientId, "refresh_token", refreshToken, options);
+        }
+
+        private async Task<JObject> GetDelegationTokenCore(string targetClientId, string tokenType, string token, IDictionary<string, string> options = null)
+        {
             var taskFactory = new TaskFactory();
 
             var endpoint = string.Format(DelegationEndpoint, this.domain);
             var parameters = String.Format(
-                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&id_token={0}&target={1}&client_id={2}",
-                id_token,
+                "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&{0}={1}&target={2}&client_id={3}",
+                tokenType,
+                token,
                 targetClientId,
                 this.clientId);
 
@@ -245,8 +296,23 @@ namespace Auth0.SDK
         }
 
         /// <summary>
-        /// Log a user out of a Auth0 application.
+        /// Verifies if the jwt for the current user has expired.
         /// </summary>
+        /// <returns>true if the token has expired, false otherwise.</returns>
+        /// <remarks>Must be logged in before invoking.</remarks>
+        public bool HasTokenExpired()
+        {
+            if (string.IsNullOrEmpty(this.CurrentUser.IdToken))
+            {
+                throw new InvalidOperationException("You need to login first.");
+            }
+
+            return TokenValidator.HasExpired(this.CurrentUser.IdToken);
+        }
+        
+        /// <summary>
+                 /// Log a user out of a Auth0 application.
+                 /// </summary>
         public virtual async Task LogoutAsync()
         {
             this.CurrentUser = null;

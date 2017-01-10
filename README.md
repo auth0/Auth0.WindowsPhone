@@ -76,6 +76,36 @@ auth0.GetDelegationToken(targetClientId, options)
         });
 ~~~
 
+### Refresh id_token using refresh_token
+
+You can obtain a `refresh_token` which **never expires** (unless explicitly revoked) and use it to renew the `id_token`. 
+
+To do that you need to first explicitly request it when logging in:
+
+~~~cs
+var user = await auth0.LoginAsync(withRefreshToken: true);
+
+// you can access the refresh token this way
+var refreshToken = user.RefreshToken;
+~~~
+
+You should store that token in a safe place. The next time, instead of asking the user to log in you will be 
+able to use the following code to get a valid `id_token`:
+~~~cs
+
+var idToken = auth0.CurrentUser.IdToken;
+if (TokenValidator.HasExpired(idToken))
+{
+    // refresh it
+    var result = await auth0.RefreshToken();
+    idToken = (string)result["id_token"];
+    auth0.CurrentUser.IdToken = idToken;
+}
+
+~~~
+
+---
+
 ---
 
 ## What is Auth0?
