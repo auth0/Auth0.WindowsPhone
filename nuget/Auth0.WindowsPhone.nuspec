@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>Auth0.WindowsPhone</id>
+        <version>1.5.0-beta1</version>
+        <authors>Auth0</authors>
+        <owners>Auth0</owners>
+        <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+        <projectUrl>https://github.com/auth0/Auth0.WindowsPhone</projectUrl>
+        <iconUrl>http://secure.gravatar.com/avatar/805765c256ff8617fcad483b5476faf2</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>A simple client to Authenticate Users with Auth0.</description>
+        <copyright>Copyright 2013</copyright>
+        <tags>Auth0 OAuth Federation Wsfed ADFS Office365 GoogleApps WP WindowsPhone Windows Phone</tags>
+        <dependencies>
+            <group targetFramework="Silverlight4.0-WindowsPhone71">
+                <dependency id="Newtonsoft.Json" version="5.0.6" />
+                <dependency id="System.Threading.Tasks" version="3.0.1" />
+            </group>
+            <group targetFramework="WindowsPhone8.0">
+                <dependency id="Newtonsoft.Json" version="5.0.8" />
+            </group>
+            <group targetFramework="Unsupported0.0">
+                <dependency id="Newtonsoft.Json" version="6.0.3" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="..\source\Auth0Client\bin\release\Auth0Client.Phone.Silverlight.dll" target="lib\wp8\Auth0Client.Phone.Silverlight.dll" />
+        <file src="..\source\Auth0Client.Phone\bin\release\Auth0Client.Phone.xr.xml" target="lib\wpa81\Auth0Client.Phone\Auth0Client.Phone.xr.xml" />
+        <file src="..\source\Auth0Client.Phone\bin\release\LoginPage.xbf" target="lib\wpa81\Auth0Client.Phone\LoginPage.xbf" />
+        <file src="..\source\Auth0Client.Phone\bin\release\Auth0Client.Phone.dll" target="lib\wpa81\Auth0Client.Phone.dll" />
+        <file src="..\source\Auth0Client.Phone\bin\release\Auth0Client.Phone.pri" target="lib\wpa81\Auth0Client.Phone.pri" />
+    </files>
+</package>
