@@ -60,6 +60,11 @@ namespace Auth0.SDK
         {
             scope = IncreaseScopeWithOfflineAccess(withRefreshToken, scope);
             options = options ?? new Dictionary<string, string>();
+
+            // Check if device was specified with refresh token. If not, add a default device
+            if (withRefreshToken && !options.ContainsKey("device"))
+                options.Add("device", "Windows Phone " + GetDeviceId());
+
             var user = await this.broker.AuthenticateAsync(GetStartUri(connection, scope, options), new Uri(this.CallbackUrl));
 
 
@@ -159,6 +164,28 @@ namespace Auth0.SDK
             return this.CurrentUser;
         }
 
+#if WINDOWS_PHONE_APP
+
+        private string GetDeviceId()
+        {
+            var token = Windows.System.Profile.HardwareIdentification.GetPackageSpecificToken(null);
+            var hardwareId = token.Id;
+            var dataReader = Windows.Storage.Streams.DataReader.FromBuffer(hardwareId);
+
+            byte[] bytes = new byte[hardwareId.Length];
+            dataReader.ReadBytes(bytes);
+
+            return BitConverter.ToString(bytes).Replace("-", "");
+        }
+
+#else
+
+        private string GetDeviceId()
+        {
+            return Windows.Phone.System.Analytics.HostInformation.PublisherHostId;
+        }
+    
+#endif
         private static string IncreaseScopeWithOfflineAccess(bool withRefreshToken, string scope)
         {
             if (withRefreshToken && !scope.Contains("offline_access"))

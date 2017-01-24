@@ -25,7 +25,7 @@ namespace SampleApp
         {
             try
             {
-                await auth0.LoginAsync();
+                await auth0.LoginAsync(withRefreshToken: true);
                 //var user = await auth0.LoginAsync("google-oauth2");
                 //var user = await auth0.LoginAsync("sql-azure-database", "foo@dasd.com", "bar");
             }
